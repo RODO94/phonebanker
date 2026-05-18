@@ -1,8 +1,9 @@
 :root {
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-body);
+  font-size: var(--size-body);
   line-height: 1.5;
-  color: #0b0c0c;
-  background: #ffffff;
+  color: var(--color-text-primary);
+  background: var(--color-surface-page);
 }
 
 * {

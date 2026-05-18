@@ -195,6 +195,24 @@ Quick reference for building any feature in Phonebanker. Skim the relevant secti
 
 ---
 
+## 🎨 Styling / design tokens
+
+> Any new CSS, any new component, any visual change.
+
+**Consider:**
+- **Reach for the token, not the literal.** `var(--color-text-primary)` not `#0B0C0C`. `var(--font-body)` not `"Geist Mono"`. Literal hex, font names, sizes, or line-heights in component CSS are a smell.
+- **Consume semantic, not primitive.** Semantic tokens (`--color-action-primary`, `--font-interactive`) encode intent; primitives (`--color-red-500`, `--font-mono`) are building blocks. Components reach for the semantic layer; primitives exist so semantic tokens can be re-aliased without sweeping the codebase.
+- **Typography roles** — `display`, `subtitle`, `body`, `interactive`, `caption`. **Geist Mono is the default UI font; Geist is the exception** (display + subtitle only). `interactive` covers buttons, input labels, and clickable card text.
+- **Colour categories** — `text`, `surface`, `border`, `action`. If the colour you want doesn't fit a category, that's a signal — either it belongs in a category you haven't named yet, or you're reaching for something the system shouldn't have.
+- **Adding a new token earns its place.** Three or more uses across genuinely similar problems, or it names a real role the system is missing. One-offs stay in the component's CSS until they recur.
+- **CSS is the source of truth; Figma is the reference.** When they diverge, update both — keep `tokens.css` authoritative. Don't import tokens *from* Figma; mirror by hand.
+
+**Read more:**
+- [src/styles/tokens.css](../src/styles/tokens.css) — the authoritative list of every token
+- [tech/patterns-and-conventions.md § CSS for a component](tech/patterns-and-conventions.md) — class-vs-attribute, nesting, mobile-first
+
+---
+
 ## ✏️ Copy / microcopy / labels
 
 > Any user-facing words — button labels, headings, error messages, empty states, the celebration screen.
