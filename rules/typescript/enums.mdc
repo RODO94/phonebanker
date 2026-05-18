@@ -1,0 +1,56 @@
+---
+description: Rules for using Enums vs 'as const' objects
+globs: **/*.ts, **/*.tsx
+alwaysApply: false
+---
+
+# Enums vs `as const`
+
+**Do not introduce new enums into the codebase.** Retain existing enums only where necessary.
+
+If you require enum-like behaviour, use an `as const` object.
+
+## Preferred Pattern: `as const`
+
+```ts
+const backendToFrontendEnum = {
+  xs: "EXTRA_SMALL",
+  sm: "SMALL",
+  md: "MEDIUM",
+} as const;
+
+// Extract values
+type UpperCaseEnum = (typeof backendToFrontendEnum)[keyof typeof backendToFrontendEnum];
+// "EXTRA_SMALL" | "SMALL" | "MEDIUM"
+
+// Extract keys
+type LowerCaseEnum = keyof typeof backendToFrontendEnum;
+// "xs" | "sm" | "md"
+```
+
+## Why Avoid Enums?
+
+Numeric enums behave differently from string enums and produce a reverse mapping that adds runtime overhead and confusion.
+
+```ts
+enum Direction {
+  Up,
+  Down,
+  Left,
+  Right,
+}
+
+// Runtime object actually looks like:
+// {
+//   '0': 'Up',
+//   '1': 'Down',
+//   '2': 'Left',
+//   '3': 'Right',
+//   'Up': 0,
+//   'Down': 1,
+//   'Left': 2,
+//   'Right': 3
+// }
+```
+
+This means `Object.keys(Direction).length` is 8, not 4.

@@ -1,0 +1,30 @@
+---
+description: Rules for optional properties
+globs: **/*.ts, **/*.tsx
+alwaysApply: false
+---
+
+# Property Modifiers
+
+## Optional Properties
+
+Use optional properties (`?`) **extremely sparingly**. Only use them when the property is truly optional.
+
+If a property is required but might be missing due to data shape (e.g., from an API), prefer `string | undefined` over `string?` if explicit handling is preferred.
+
+**Bad:**
+```ts
+type AuthOptions = {
+  userId?: string;
+};
+// Accessing options.userId requires no check, might cause bugs
+```
+
+**Good:**
+```ts
+type AuthOptions = {
+  userId: string | undefined;
+};
+// Accessing options.userId forces you to check for undefined
+```
+

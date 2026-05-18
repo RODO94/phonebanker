@@ -1,0 +1,61 @@
+---
+description: Apply when testing components that use Zustand stores in Cypress
+globs: front_end/v2/**/tests/**/*, front_end/v2/**/src/**/*.unit.cy.ts
+alwaysApply: false
+---
+# Cypress Zustand Store Testing
+
+## 1. Setting State
+
+Use `useStore.setState()` directly in `beforeEach` to set initial state. This is synchronous and takes effect immediately.
+
+```typescript path=null start=null
+beforeEach(() => {
+  useImageStore.setState({ thermalPalette: 'BLACK_HOT' })
+})
+```
+
+## 2. Asserting State After Interactions
+
+**Never** use `cy.wrap(useStore.getState())` after a click or other Cypress command. `cy.wrap()` evaluates its argument eagerly (at parse time), before queued commands execute. The state snapshot will be stale.
+
+Use `cy.then()` to defer reading state until after preceding commands resolve:
+
+```typescript path=null start=null
+// Bad: reads state before click resolves
+cy.get('[data-testid="btn"]').click()
+cy.wrap(useStore.getState()).its('value').should('eq', 'new')
+
+// Good: reads state after click resolves
+cy.get('[data-testid="btn"]').click()
+cy.then(() => {
+  expect(useStore.getState().value).to.eq('new')
+})
+```
+
+`cy.wrap(useStore.getState())` is safe when no preceding Cypress command needs to resolve first (e.g. checking initial state after `cy.mount`).
+
+## 3. Do Not Spy on Zustand Store Methods
+
+**Never** use `cy.spy()` or `cy.stub()` on methods from `useStore.getState()`. Zustand creates new state objects on each `setState()` call via shallow merge. The spy wraps the method on one object, but subsequent `setState()` calls copy the spy-wrapped function to new state objects. Cypress's sinon sandbox restores only the original object reference, so by the next test the method is still wrapped, causing:
+
+> `Attempted to wrap X which is already wrapped`
+
+Instead, assert on the resulting state value which tests the actual behaviour:
+
+```typescript path=null start=null
+// Bad: spy on Zustand store method
+cy.spy(useStore.getState(), 'setTheme').as('setTheme')
+cy.get(btn).click()
+cy.get('@setTheme').should('have.been.calledWith', 'dark')
+
+// Good: assert on state directly
+cy.get(btn).click()
+cy.then(() => {
+  expect(useStore.getState().theme).to.eq('dark')
+})
+```
+
+## Reference
+
+@front_end/v2/rapid/tests/component/PaletteToggle.cy.tsx

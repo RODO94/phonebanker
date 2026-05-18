@@ -1,0 +1,42 @@
+---
+description: Standards for Cypress test structure, file organization, and test types in Rapid V2
+globs: front_end/v2/**/tests/**/*, front_end/v2/**/src/**/*.unit.cy.ts
+alwaysApply: false
+---
+# Cypress Test Structure & Types
+
+## 1. File Organisation
+
+| Test Type | File Pattern   | Location                       |
+| --------- | -------------- | ------------------------------ |
+| Unit      | `*.unit.cy.ts` | Co-located next to source file |
+| Component | `*.cy.tsx`     | `tests/component/`             |
+| E2E       | `*.cy.js`      | `tests/e2e/`                   |
+
+### Unit Tests (`.unit.cy.ts`)
+Test pure functions in isolation. Import directly and assert outputs.
+Co-locate with source: `src/utils/foo.ts` -> `src/utils/foo.unit.cy.ts`
+
+### Component Tests (`.cy.tsx`)
+Mount components in isolation using `cy.mount`. Use spies for callback props.
+
+### E2E Tests (`.cy.js`)
+Test complete user flows with mocked network requests. Never hit real backends.
+
+## 2. Test Hierarchy & Naming
+
+Use `describe` blocks for features/components, `it` blocks for individual scenarios.
+
+```typescript path=null start=null
+// ✅ Good: Clear hierarchy & Behaviour-focused naming
+describe('CanvasImage', () => {
+  describe('zoom behaviour', () => {
+    it('zooms in when scrolling up', () => { ... });
+    it('respects maximum zoom limit of 5x', () => { ... });
+  });
+});
+```
+
+Test names must describe the **expected behaviour**, not the implementation.
+*   ✅ `displays error message when login fails`
+*   ❌ `calls setError with message`

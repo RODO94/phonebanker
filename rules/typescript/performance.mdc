@@ -1,0 +1,101 @@
+---
+description: TypeScript compiler performance optimizations. Apply when writing complex types or experiencing slow compilation.
+globs: **/*.ts, **/*.tsx
+alwaysApply: false
+---
+# TypeScript Performance
+
+Guidelines from the [TypeScript Performance Wiki](https://github.com/microsoft/TypeScript/wiki/Performance) to ensure faster compilation and editing.
+
+## 1. Add Explicit Return Type Annotations
+
+For exported functions, add explicit return types. This reduces work for the compiler and improves incremental build performance.
+
+**Why:** Named types are more compact than inferred anonymous types. This reduces time spent reading/writing `.d.ts` files.
+
+```typescript path=null start=null
+// ❌ Compiler must infer and generate complex return type
+export function getUser() {
+  return { id: 1, name: 'Alice', createdAt: new Date() };
+}
+
+// ✅ Explicit return type, no inference needed
+export function getUser(): User {
+  return { id: 1, name: 'Alice', createdAt: new Date() };
+}
+```
+
+**Hint:** If your `.d.ts` output contains `import("./path").SomeType`, you likely need explicit annotations.
+
+## 2. Prefer Base Types Over Large Unions
+
+Large unions (12+ members) cause quadratic comparison time. Use a base type with subtypes instead.
+
+**Why:** Every time an argument is passed to a function accepting a union, TypeScript compares against each member pairwise.
+
+```typescript path=null start=null
+// ❌ Slow: Large union, quadratic comparisons
+type Element = DivElement | SpanElement | ImgElement | /* 20 more... */;
+
+// ✅ Fast: Base type with inheritance
+interface HtmlElement {
+  tagName: string;
+  id?: string;
+}
+
+interface DivElement extends HtmlElement {
+  tagName: 'div';
+}
+
+interface ImgElement extends HtmlElement {
+  tagName: 'img';
+  src: string;
+}
+```
+
+## 3. Name Complex Types
+
+Extract inline conditional types into named type aliases. TypeScript can cache named types.
+
+```typescript path=null start=null
+// ❌ Slow: Inline conditional re-evaluated on every call
+interface Handler<T> {
+  handle(x: T): T extends string ? StringResult : T extends number ? NumberResult : DefaultResult;
+}
+
+// ✅ Fast: Named type alias, cached by compiler
+type HandleResult<T> =
+  T extends string ? StringResult :
+  T extends number ? NumberResult :
+  DefaultResult;
+
+interface Handler<T> {
+  handle(x: T): HandleResult<T>;
+}
+```
+
+## 4. Configuration Tips
+
+### tsconfig.json
+*   **`skipLibCheck: true`**: Skip type-checking of `.d.ts` files. Safe for most projects.
+*   **`incremental: true`**: Enable incremental compilation for faster rebuilds.
+*   **Specify `include`/`exclude`**: Exclude `node_modules`, test artifacts, and build outputs.
+
+### Controlling `@types`
+TypeScript auto-includes all `@types/*` packages. Use `types` to limit:
+```json
+{
+  "compilerOptions": {
+    "types": ["node", "jest"]
+  }
+}
+```
+
+## Summary
+
+| Pattern | Slow | Fast |
+| --- | --- | --- |
+| Composing types | `type X = A & B` | `interface X extends A, B` |
+| Function returns | Inferred | Explicit annotation |
+| Many variants | Large union | Base type + subtypes |
+| Conditional types | Inline | Named type alias |

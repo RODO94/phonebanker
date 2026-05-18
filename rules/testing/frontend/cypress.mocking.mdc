@@ -1,0 +1,58 @@
+---
+description: Apply when writing Cypress intercepts, fixtures, or mocking GraphQL
+globs: front_end/v2/**/tests/**/*, front_end/v2/**/src/**/*.unit.cy.ts
+alwaysApply: false
+---
+# Cypress Mocking & Fixtures
+
+## 1. Network Mocking
+Always mock API calls with `cy.intercept`. Never hit real backends.
+Use typed fixtures from `front_end/v2/shared/fixtures/`.
+
+### Intercept Timing
+*   Register intercepts **BEFORE** `cy.visit()`.
+*   Use `beforeEach()`, not `before()`.
+
+### Waiting
+Always alias intercepts and wait explicitly.
+```typescript path=null start=null
+cy.intercept('GET', '/api/data').as('getData')
+cy.visit('/page')
+cy.wait('@getData')
+```
+
+## 2. Shared Fixtures Strategy
+Use TypeScript modules in `shared/fixtures/` instead of JSON.
+*   **Mutable State**: Export a `cleanup()` function and call it in `afterEach()`.
+*   **No Circular Deps**: Never import app code (`rapid/src`) into shared fixtures.
+
+```typescript path=null start=null
+// shared/fixtures/auth/userSession.ts
+export let userSession = { ... };
+export function cleanup() { userSession = { ...defaults }; }
+```
+
+## 3. GraphQL Patterns
+Use **ONE** intercept for the GraphQL endpoint with conditional routing to avoid LIFO override issues.
+
+```typescript path=front_end/v2/rapid/tests/support/commands.ts
+// tests/support/commands.ts
+Cypress.Commands.add('interceptMatchpointModelGraphQL', () => {
+  cy.intercept('POST', graphqlUrl, (req) => {
+    const { body } = req
+    const query = body.query || ''
+
+    // Route based on query content
+    if (query.includes('modelAggregate')) {
+      req.alias = 'modelAggregate'
+      req.reply({ data: { modelAggregate: { totalCount: 10 } } })
+      return
+    }
+    // ... other queries
+  }).as('graphql')
+})
+```
+
+## 4. Route Loaders & Config
+*   Mock **ALL** route loader queries (or the app will crash).
+*   Mock dynamic config endpoints (e.g., `config.json`) if fetched at runtime.

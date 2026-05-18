@@ -1,0 +1,29 @@
+---
+description: Apply when reviewing Cypress tests for common issues, assertions, and visibility handling
+globs: front_end/v2/**/tests/**/*, front_end/v2/**/src/**/*.unit.cy.ts
+alwaysApply: false
+---
+# Cypress Patterns & Anti-Patterns
+
+## 1. Anti-Patterns
+*   ❌ **Arbitrary Waits**: `cy.wait(3000)` -> Use `cy.wait('@alias')` or assertion.
+*   ❌ **Conditional Testing**: `if (exists) click` -> Tests must be deterministic.
+*   ❌ **Testing Implementation**: `cy.window().its('state')` -> Test visible behaviour.
+*   ❌ **CommonJS `require`**: Use ESM `import`.
+
+## 2. Assertions
+*   **Explicit Assertions**: `should('have.text', 'Saved')` over existence checks.
+*   **Floating Point**: Use `closeTo` for numbers. `expect(x).to.be.closeTo(10, 0.001)`.
+
+## 3. Element Visibility
+Cypress checks visibility by center point.
+*   **Hidden Elements**: Use `scrollIntoView()` before interacting.
+*   **Force**: Use `{ force: true }` ONLY if element is behind a known overlay or testing canvas where DOM visibility is unreliable.
+
+## 4. Environment & Globals
+*   **Globals**: Stub `window` globals (analytics, etc.) in `tests/support/e2e.ts`.
+*   **Env Vars**: Use `Cypress.env('API_URL')`, never hardcoded secrets.
+
+## 5. Application vs Test Errors
+*   **App Error**: `TypeError: undefined is not an object` -> Fix app code.
+*   **Test Error**: `cy.wait() could not find alias` -> Fix test setup.

@@ -1,0 +1,53 @@
+---
+description: Interface vs Type and Extension Rules
+globs: **/*.ts, **/*.tsx
+alwaysApply: false
+---
+
+# Interfaces and Types
+
+## Default to `type`
+
+ALWAYS default to `type` for defining shapes of objects, unions, primitives, etc.
+
+```ts
+type User = {
+  name: string;
+};
+```
+
+## Use `interface` for Inheritance
+
+ALWAYS prefer `interface` to `type` when modelling inheritance or using `extends`.
+
+**Reasoning:**
+The `&` operator (intersection) used with types has poor performance in TypeScript compared to interface extension.
+
+**Bad (Performance):**
+```ts
+type A = { a: string };
+type B = { b: string };
+type C = A & B; // Intersection is slower
+```
+
+**Good (Performance):**
+```ts
+interface A { a: string; }
+interface B { b: string; }
+
+interface C extends A, B {
+  // Additional properties
+}
+```
+
+**Example of Error Safety:**
+Interfaces also provide better error messages for incompatible overrides.
+
+```ts
+interface WithId { id: string; }
+
+interface User extends WithId {
+  name: string;
+  // id: number; // Error: Interface 'User' incorrectly extends interface 'WithId'.
+}
+```

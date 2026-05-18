@@ -1,0 +1,47 @@
+---
+description: When to use 'any' in generic functions and how to structure them
+globs: **/*.ts, **/*.tsx
+alwaysApply: false
+---
+
+# Generic Functions & 'any' Usage
+
+When building generic functions, you may need to use `any` inside the function body. This is because TypeScript often cannot match your runtime logic to the logic done inside your types.
+
+## Example: Type vs Runtime Logic Mismatch
+
+```ts
+const youSayGoodbyeISayHello = <
+  TInput extends "hello" | "goodbye",
+>(
+  input: TInput,
+): TInput extends "hello" ? "goodbye" : "hello" => {
+  if (input === "goodbye") {
+    return "hello"; // Error!
+  } else {
+    return "goodbye"; // Error!
+  }
+};
+```
+
+On the type level (and the runtime), this function returns `goodbye` when the input is `hello`. There is no way to make this work concisely in TypeScript without `any`.
+
+## Solution: Use 'any' sparingly
+
+In this specific case, casting to `any` is the most concise solution:
+
+```ts
+const youSayGoodbyeISayHello = <
+  TInput extends "hello" | "goodbye",
+>(
+  input: TInput,
+): TInput extends "hello" ? "goodbye" : "hello" => {
+  if (input === "goodbye") {
+    return "hello" as any;
+  } else {
+    return "goodbye" as any;
+  }
+};
+```
+
+**Rule:** Outside of generic functions, use `any` extremely sparingly.

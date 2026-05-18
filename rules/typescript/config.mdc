@@ -1,0 +1,30 @@
+---
+description: Implications of noUncheckedIndexedAccess
+globs: **/*.ts, **/*.tsx
+alwaysApply: false
+---
+
+# Configuration: `noUncheckedIndexedAccess`
+
+If the user has `noUncheckedIndexedAccess` enabled in `tsconfig.json` (which is recommended), indexing into objects and arrays will behave differently.
+
+## Behavior
+
+Accessing an array index or object key will strictly return `T | undefined` instead of `T`.
+
+```ts
+const obj: Record<string, string> = {};
+
+// With noUncheckedIndexedAccess, value is `string | undefined`
+// Without it, value is `string` (unsafe!)
+const value = obj.key;
+```
+
+```ts
+const arr: string[] = [];
+
+// With noUncheckedIndexedAccess, value is `string | undefined`
+const value = arr[0];
+```
+
+**Rule:** Always handle the `undefined` case when accessing indexed properties.

@@ -1,0 +1,69 @@
+---
+description: Standards for named vs default exports and type imports
+globs: **/*.ts, **/*.tsx
+alwaysApply: false
+---
+
+# Exports and Imports
+
+## Named Exports vs Default Exports
+
+Unless explicitly required by the framework, **do not use default exports**.
+
+**Bad:**
+```ts
+export default function myFunction() {
+  return <div>Hello</div>;
+}
+```
+
+**Good:**
+```ts
+export function myFunction() {
+  return <div>Hello</div>;
+}
+```
+
+**Reasoning:**
+Default exports create confusion for the importer and make refactoring harder.
+
+**Bad Import:**
+```ts
+import myFunction from ./myFunction"; // Name can be anything, leading to inconsistency
+```
+
+**Good Import:**
+```ts
+import { myFunction } from "./myFunction"; // Explicit naming
+```
+
+**Exception:**
+Frameworks like Next.js often require default exports for pages/layouts.
+```tsx
+// This is fine, if required by the framework
+export default function MyPage() {
+  return <div>Hello</div>;
+}
+```
+
+## Import Type
+
+Use `import type` whenever you are importing a type. Prefer top-level `import type` over inline `import { type ... }`.
+
+**Bad:**
+```ts
+import { type User } from "./user";
+```
+
+**Good:**
+```ts
+import type { User } from "./user";
+```
+
+**Reasoning:**
+In certain environments, the inline version's import will not be fully erased, leaving side-effect imports in the transpiled code:
+
+```ts
+// After transpilation of the 'BAD' example:
+import "./user"; // Side effect remains
+```

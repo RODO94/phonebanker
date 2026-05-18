@@ -1,0 +1,50 @@
+---
+description: Master rule for Cypress testing in React applications. Delegates to specific sub-rules.
+globs: front_end/v2/**/tests/**/*, front_end/v2/**/src/**/*.unit.cy.ts
+alwaysApply: false
+---
+# Cypress Testing Rules
+
+Rules for AI agents writing and evaluating Cypress tests in the frontend/v2 directory.
+
+## Sub-Rules
+This rule delegates to focused sub-rules. Consult these for detailed standards:
+
+*   **Structure & Naming**: @testing/frontend/cypress.structure.mdc
+    *   File patterns (`.unit.cy.ts`, `.cy.js`)
+    *   Directory structure
+    *   Test hierarchy
+
+*   **Selectors & Commands**: @testing/frontend/cypress.selectors.mdc
+    *   `data-testid` priority
+    *   Custom commands (`cy.getByTestId`)
+    *   Page Objects
+
+*   **Mocking & Fixtures**: @testing/frontend/cypress.mocking.mdc
+    *   `cy.intercept` patterns
+    *   GraphQL mocking
+    *   Typed fixtures (Shared Fixtures Strategy)
+
+*   **Patterns & Anti-Patterns**: @testing/frontend/cypress.patterns.mdc
+    *   Assertions
+    *   Visibility issues (`{ force: true }`)
+    *   Common mistakes (Arbitrary waits)
+
+*   **Zustand Store Testing**: @testing/frontend/cypress.zustand.mdc
+    *   Setting state with `setState()`
+    *   Asserting state after interactions (`cy.then`)
+    *   Why `cy.spy`/`cy.stub` must not be used on store methods
+
+*   **Kestrix Survey (`front_end/v2/kestrix_survey/`)**: @front_end/.cursor/rules/testing/kestrix_survey/cypress-overview.mdc
+    *   Component vs E2E decision framework and `cy.mount`-first atom testing
+    *   Delegates to @front_end/.cursor/rules/testing/kestrix_survey/cypress-component.mdc, @front_end/.cursor/rules/testing/kestrix_survey/cypress-e2e.mdc, @front_end/.cursor/rules/testing/kestrix_survey/cypress-quality.mdc
+
+## Checklist Summary
+Before submitting test code, verify:
+- [ ] **Structure**: Tests are idempotent (Arrange-Act-Assert) and use `beforeEach()`
+- [ ] **Selectors**: Used `data-testid` via `cy.getByTestId` or centralised constants
+- [ ] **Mocking**: All API/GraphQL calls mocked with `cy.intercept`
+- [ ] **Timing**: No `cy.wait(ms)`; specific aliases waited (`@createItem`)
+- [ ] **Fixtures**: Typed fixtures + `cleanup()` (`shared/fixtures/` and/or app `tests/fixtures/` as used by the package)
+- [ ] **Zustand**: Used `cy.then()` for post-interaction state assertions; no `cy.spy`/`cy.stub` on store methods
+- [ ] **Environment**: Stubbed globals and used `Cypress.env()`

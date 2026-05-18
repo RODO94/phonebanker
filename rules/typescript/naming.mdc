@@ -1,0 +1,23 @@
+---
+description: Naming conventions for TypeScript files and symbols
+globs: **/*.ts, **/*.tsx
+alwaysApply: false
+---
+
+# Naming Conventions
+
+*   **File Names**: Use `kebab-case` (e.g., `my-component.ts`, `user-utils.ts`).
+*   **Variables & Functions**: Use `camelCase` (e.g., `myVariable`, `myFunction()`).
+*   **Types, Interfaces, Classes, Components, Schemas**: Use `UpperCamelCase` (PascalCase) (e.g., `MyClass`, `User`, `UserProfile`).
+*   **Constants & Enum Values**: Use `ALL_CAPS` (e.g., `MAX_COUNT`, `Color.RED`).
+
+## Generics
+
+Inside generic types, functions, or classes, prefix type parameters with `T`.
+
+```ts
+type RecordOfArrays<TItem> = Record<string, TItem[]>;
+```
+
+**Bad:** `type Wrapper<V> = ...`
+**Good:** `type Wrapper<TValue> = ...`

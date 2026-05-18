@@ -1,0 +1,75 @@
+---
+alwaysApply: false
+description: Rules for writing AI agent rules
+globs: *.mdc
+---
+
+Never write globs with speech marks
+
+Good example:
+```
+globs: front_end/v2/**/tests/**/*, front_end/v2/**/src/**/*.unit.cy.ts
+```
+
+# Rule Title
+
+- Precise instruction 1
+- Precise instruction 2
+
+@reference-file.ts
+
+### Rule Types & Application
+
+| Rule Type | Configuration | Best Use Case |
+| --- | --- | --- |
+| **Always Apply** | `alwaysApply: true` | Global preferences (e.g., "Always use PNPM"). |
+| **Intelligent** | `description` defined | Specific patterns (e.g., "Use this when modifying API routes"). |
+| **File-Specific** | `globs` defined | Language/Folder conventions (e.g., React hooks, CSS modules). |
+| **Manual** | `@-mention` only | Rare edge cases or complex architectural migrations. |
+
+---
+
+## 🎯 Best Practices
+
+* **Be Concise:** Keep rules under **500 lines**.
+* **Actionable & Scoped:** Avoid vague guidance like "Write clean code." Use "Use `interface` over `type` for public APIs."
+* **Token Efficiency:** Large files waste the "Instruction Budget." If a rule isn't relevant to the current file/task, it shouldn't be loaded.
+* **Reference, Don't Copy:** Instead of pasting code snippets, use `@filename` to point the Agent to a canonical example. This prevents rules from becoming stale.
+* **Progressive Disclosure:** Use a hierarchical approach. The root rule should point to sub-rules rather than containing everything.
+
+---
+
+## 🚫 What to Avoid
+
+1. **Style Guide Dumping:** Don't copy-paste your entire Prettier/Linter config. The Agent already knows standard conventions; only document **deviations**.
+2. **Tool Manuals:** Don't explain how `npm` or `git` works.
+3. **Redundancy:** If a pattern is clearly visible in the codebase, the Agent will likely infer it. Only write a rule if the Agent frequently makes the same mistake.
+4. **Bloated AGENTS.md:** Avoid a single, massive file. It confuses the Agent and leads to "instruction fatigue."
+
+---
+
+## 📁 Recommended Structure
+
+Organize rules by domain to ensure they only trigger when needed:
+
+```text
+.cursor/rules/
+├── typescript-conventions.mdc  # Globs: "**/*.ts"
+├── react-patterns.mdc         # Globs: "**/*.tsx"
+├── api-design.mdc             # Description: "Apply when editing files in /pages/api"
+└── infra/
+    └── terraform-rules.md     # Specific to infrastructure changes
+
+```
+
+### Monorepo Strategy
+
+If working in a monorepo, use a high-level router rule:
+
+> "This is a monorepo. For service-specific logic, refer to the `AGENTS.md` located within each package directory."
+
+---
+
+> [!tip]
+> When asking the Agent to create a new rule, use the prompt:
+> *"Create a new .mdc rule for [Pattern] following the guidelines in writing_rules.md. Ensure it uses globs to limit scope and follows the principle of progressive disclosure."*

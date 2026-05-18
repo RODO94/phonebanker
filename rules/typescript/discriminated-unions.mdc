@@ -1,0 +1,62 @@
+---
+description: When and how to use discriminated unions
+globs: **/*.ts, **/*.tsx
+alwaysApply: false
+---
+
+# Discriminated Unions
+
+Proactively use discriminated unions to model data that can be in one of a few different shapes.
+
+## Example: Event System
+
+```ts
+type UserCreatedEvent = {
+  type: "user.created";
+  data: { id: string; email: string };
+};
+
+type UserDeletedEvent = {
+  type: "user.deleted";
+  data: { id: string };
+};
+
+type Event = UserCreatedEvent | UserDeletedEvent;
+```
+
+Use `switch` statements to handle the results of discriminated unions (exhaustiveness checking works best here):
+
+```ts
+const handleEvent = (event: Event) => {
+  switch (event.type) {
+    case "user.created":
+      console.log(event.data.email);
+      break;
+    case "user.deleted":
+      console.log(event.data.id);
+      break;
+  }
+};
+```
+
+## Anti-Pattern: The 'Bag of Optionals'
+
+Avoid creating types with many optional fields where the presence of one field implies the presence of another.
+
+**Bad - Impossible States:**
+```ts
+type FetchingState<TData> = {
+  status: "idle" | "loading" | "success" | "error";
+  data?: TData; // Could be missing when success
+  error?: Error; // Could be missing when error
+};
+```
+
+**Good - Impossible States Prevented:**
+```ts
+type FetchingState<TData> =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "success"; data: TData }
+  | { status: "error"; error: Error };
+```

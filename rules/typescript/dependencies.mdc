@@ -1,0 +1,27 @@
+---
+description: Instructions for installing libraries. Apply when adding new dependencies.
+alwaysApply: false
+---
+
+# Installing Libraries
+
+When installing libraries, **do not rely on your own training data or manual `package.json` edits**.
+
+Your training data has a cut-off date. To ensure you use the latest compatible version, always use the package manager CLI.
+
+## Instructions
+
+Instead of picking a version manually (via updating the `package.json` file), use a script to install the latest version of a library.
+
+```bash
+# pnpm (preferred if available)
+pnpm add -D @typescript-eslint/eslint-plugin
+
+# yarn
+yarn add -D @typescript-eslint/eslint-plugin
+
+# npm
+npm install --save-dev @typescript-eslint/eslint-plugin
+```
+
+This ensures `package.json` and the lockfile are updated correctly with the latest resolved version.

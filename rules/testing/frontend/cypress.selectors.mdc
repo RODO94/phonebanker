@@ -1,0 +1,53 @@
+---
+description: Best practices for Cypress selectors, custom commands, and page objects
+globs: front_end/v2/**/tests/**/*, front_end/v2/**/src/**/*.unit.cy.ts
+alwaysApply: false
+---
+# Cypress Selectors & Commands
+
+## 1. Selectors
+
+### Priority Order
+1.  `data-testid` attributes (preferred)
+2.  Accessible roles/labels (`cy.findByRole`)
+3.  Stable class names (last resort)
+
+### Centralised Selectors
+Define selectors in `tests/support/selectors.ts` or page objects. Do not hardcode strings in tests.
+
+```typescript path=front_end/v2/rapid/tests/support/selectors.ts
+export const PAGE_SELECTORS = {
+  MATCHPOINTS_PAGE: '[data-testid="matchpoints-page"]',
+  FILTER_GROUP: '[data-testid="filter-group"]'
+}
+
+export const CANVAS_SELECTORS = {
+  THERMAL_CANVAS: '[data-testid="thermal-canvas"]',
+  // ...
+}
+```
+
+## 2. Custom Commands
+
+Encapsulate reusable logic (used in 3+ tests) in `tests/support/commands.ts`.
+
+*   **Parent Commands**: Start chain (e.g. `cy.login()`)
+*   **Child Commands**: Chain off subject (e.g. `.shouldBeVisible()`)
+*   **Dual Commands**: Both (e.g. `cy.getByTestId()`)
+
+### `getByTestId`
+Use the custom command for cleaner selection:
+`cy.getByTestId('save-btn').click()`
+
+### Type Safety
+All commands must be typed in `tests/support/index.d.ts`.
+
+## 3. Page Objects
+For complex pages, encapsulate selectors and actions in a class.
+
+```typescript path=null start=null
+export class MatchpointEditorPage {
+  visit(id: string) { cy.visit(`/matchpoints/${id}`); return this; }
+  addPoint(x: number, y: number) { ... }
+}
+```

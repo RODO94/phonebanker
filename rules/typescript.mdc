@@ -1,0 +1,62 @@
+---
+description: Master rule for writing Typescript code. Delegates to specific sub-rules.
+globs: **/*.ts, **/*.tsx
+alwaysApply: false
+---
+
+# Rules for writing typescript code
+This is a parent guide for writing typescript code according to codebase rules. The subdirectory is at .cursor/rules/typescript/
+
+## Sub-rules
+This rule delegates focused sub-rules. Consult these for detailed standards on coding practices.
+
+* **Generic Functions**: @typescript/generics.mdc
+    * When to use `any` in generic functions
+    * Structure of a generic function
+
+* **Exports and Imports**: @typescript/exports-imports.mdc
+    * Named vs default exports
+    * Using `import type`
+
+* **Discriminated Unions**: @typescript/discriminated-unions.mdc
+    * When to use
+    * How to type narrow
+    * Preventing 'bag of optionals'
+
+* **Enums**: @typescript/enums.mdc
+    * Don't add new enums
+    * Using `as const` instead
+
+* **Installing Libraries**: @typescript/dependencies.mdc
+    * Install libraries using CLI, do not edit package.json manually
+
+* **Interfaces and Types**: @typescript/interfaces-types.mdc
+    * Default to types
+    * When to use interfaces (extends)
+    * Performance implications of using `&`
+
+* **JS docs**: @typescript/jsdoc.mdc
+    * Writing JS Docs comments
+    * Use @link
+    * No redundant types
+
+* **Naming**: @typescript/naming.mdc
+    * File, variable, and class naming conventions
+
+* **Configuration**: @typescript/config.mdc
+    * Handling `noUncheckedIndexedAccess`
+    * Undefined checks for array access
+
+* **Properties**: @typescript/properties.mdc
+    * Use `readonly` by default
+    * Use optional properties sparingly
+
+* **Return Types and Errors**: @typescript/error-handling.mdc
+    * When to throw errors vs Result types
+    * Explicit return types for top-level functions
+
+* **Performance**: @typescript/performance.mdc
+    * Prefer `interface extends` over intersections
+    * Explicit return types for exports
+    * Base types over large unions
+    * Name complex types
