@@ -1,0 +1,54 @@
+/*
+ * Typography tokens — mirror of the Figma "Tokens" collection.
+ *
+ * CSS is the source of truth. Figma is the reference. When values diverge,
+ * update both — by hand — keeping this file authoritative.
+ *
+ * Two layers:
+ *   1. Primitives — the raw font families.
+ *   2. Semantic roles — what the type MEANS in the UI. Roles alias primitives
+ *      for family, and hold their own size / line-height / weight / tracking.
+ *
+ * Roles map to Figma text styles of the same name.
+ */
+
+:root {
+  /* Primitives ────────────────────────────────────────────────────── */
+  --font-sans: 'Geist', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* Display ───────────────────────────────────────────────────────── */
+  --font-display: var(--font-sans);
+  --size-display: 45px;
+  --lh-display: 52px;
+  --weight-display: 400;
+  --track-display: 0;
+
+  /* Subtitle ──────────────────────────────────────────────────────── */
+  --font-subtitle: var(--font-sans);
+  --size-subtitle: 18px;
+  --lh-subtitle: 27px;
+  --weight-subtitle: 400;
+  --track-subtitle: 1px;
+
+  /* Body ──────────────────────────────────────────────────────────── */
+  --font-body: var(--font-mono);
+  --size-body: 16px;
+  --lh-body: 25.6px;
+  --weight-body: 400;
+  --track-body: -0.3125px;
+
+  /* Interactive (buttons, input labels, clickable cards) ──────────── */
+  --font-interactive: var(--font-mono);
+  --size-interactive: 18px;
+  --lh-interactive: 25.2px;
+  --weight-interactive: 500;
+  --track-interactive: -0.25px;
+
+  /* Caption ───────────────────────────────────────────────────────── */
+  --font-caption: var(--font-mono);
+  --size-caption: 14px;
+  --lh-caption: 21px;
+  --weight-caption: 400;
+  --track-caption: -0.15px;
+}
