@@ -181,7 +181,7 @@ Classes describe what the element *is*. Attributes describe what state it *is in
 
 Native CSS nesting throughout. One root selector, one file. The nesting depth carries the cascade — base, then variants, then state, then media — and a reader can scan top-down without holding selectors in their head.
 
-Tokens via custom properties from `src/styles/tokens.css`. Inline colours, spacing, or sizes are a smell — if a value isn't in the token set, either it belongs there or it doesn't belong in the design system.
+Tokens via custom properties from `src/styles/typography.css` (type roles) and `src/styles/colors.css` (colour primitives + semantic roles). Inline colours, spacing, or sizes are a smell — if a value isn't in the token set, either it belongs there or it doesn't belong in the design system.
 
 Variants are full re-declarations, not partial overrides. The `&.primary` block sets every property that differs from base, even if some happen to match — this keeps the variant readable as a complete picture rather than a diff against base.
 

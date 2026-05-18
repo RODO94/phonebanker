@@ -41,7 +41,7 @@ No preprocessor, no CSS-in-JS, no utility framework. Vite handles `.css` imports
 **Layered structure.** Styles are organised in distinct layers, each building on the last:
 
 1. **Preflight** — global resets, base typography, baseline accessibility floor (44px tap targets, 16px text minimum). Lives at `src/styles/preflight.css`.
-2. **Tokens** — design tokens as CSS custom properties: colour scale, type scale, spacing scale, radii. Lives at `src/styles/tokens.css`. One token per shade; no inline magic values elsewhere.
+2. **Tokens** — design tokens as CSS custom properties, split by domain: typography in `src/styles/typography.css` and colour in `src/styles/colors.css`. Spacing, radii, and other token domains will land as separate files as they're earned. One token per role; no inline magic values elsewhere.
 3. **Elements** — base styling of semantic HTML elements (`h1`, `p`, `button`, `input`). Colour and font only; no layout, no typography variants. Lives at `src/styles/elements.css`.
 4. **Components** — component-specific styles co-located alongside the component (`ContactCard/ContactCard.css` next to `ContactCard.tsx`). Imported by the component module.
 5. **Layout primitives** — preset-and-modifier layout helpers (e.g. `[layout="row"]`, `[layout="column"]`) for repeatable arrangements. Lives at `src/styles/layout.css`.
