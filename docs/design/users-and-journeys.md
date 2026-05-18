@@ -29,7 +29,7 @@ A union volunteer joining for the evening. Mixed digital literacy — may be doi
 ## Journey 2: Phonebanker joins and makes calls
 
 1. Phonebanker opens the join link
-2. Enters their **first name** (no account, no password)
+2. Types at least **6 characters** of their name. After a 2-second pause (or pressing Enter), the app shows up to 5 matching members. The phonebanker picks themselves. A non-member sees a message pointing them at the organiser; they can't proceed.
 3. App shows the **next available contact**:
    - Name
    - Phone number
@@ -76,14 +76,15 @@ A union volunteer joining for the evening. Mixed digital literacy — may be doi
 
 ### Phonebanker uses two devices at once
 - A volunteer (e.g. Sam) may want the contact card on their phone *and* their laptop — phone for dialling, laptop for script and outcome capture
-- Sam joins the session on device 1; the app issues a device token (cookie) tied to the participant "Sam"
-- Sam opens the link on device 2 and enters "Sam" again; the app recognises the existing participant (not a new collision-named "Sam B") and attaches the second tab to the same session
-- Both tabs poll for the current assigned contact every ~5–10s and stay in sync; either tab can log the outcome
-- If a real second "Sam" joins (different person), they're prompted to disambiguate ("Are you already in this session, or someone else called Sam?") — keeps the audit trail clean
+- Sam joins on device 1: types their name, picks themselves from the search, their `participantId` is set to their Member recordId
+- Sam joins on device 2: does the same search, picks themselves, gets the same recordId
+- Because identity is the recordId, both devices identify as the same participant. Both poll every ~5–10s and see the same assigned contact; either tab can log the outcome.
+- A second volunteer who happens to share Sam's first name is distinct by recordId from the moment they pass member search — no disambiguation prompt is needed.
 
 ### Phonebanker's tab crashes or loses connection
-- On rejoin with the same name + device token, Sam gets their previously assigned contact back rather than a new one
-- This works because the assignment is owned by the participant, not the tab
+- The volunteer re-opens the join link, re-runs the member search, picks themselves — the recordId is the same as before
+- The coordinator's `claimNextUnassignedContact` is idempotent per participant: the still-locked contact is returned to them
+- This works because the assignment is owned by the participant (recordId), not by a tab, cookie, or device token
 
 ---
 

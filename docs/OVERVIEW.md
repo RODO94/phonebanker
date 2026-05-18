@@ -52,3 +52,4 @@ Start with the **[feature-cheatsheet.md](feature-cheatsheet.md)** — quick refe
 | [tech/data-and-airtable.md](tech/data-and-airtable.md) | Airtable table structures, fields, outcomes, GDPR notes |
 | [tech/security-and-trust.md](tech/security-and-trust.md) | Threat model, join link lifecycle, audit, data sensitivity |
 | [tech/tech-stack.md](tech/tech-stack.md) | Stack choices, project structure, env vars, what's excluded |
+| [tech/patterns-and-conventions.md](tech/patterns-and-conventions.md) | Code-recipe layer: how types, CSS, and fetch/return shapes look when you sit down to write them |

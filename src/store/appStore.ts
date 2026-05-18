@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import type { Contact, Session } from '@/schemas';
+import type { Session } from '@/session/sessionSchema';
+import type { Contact } from '@/contact/contactSchema';
 
 type AppState = {
   session: Session | null;
