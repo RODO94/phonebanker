@@ -121,7 +121,7 @@ GET    /api/views                          — list available Airtable views for
 ```
 
 ### Schema sharing
-Zod schemas describing the API contract live with their domain on the client side (`src/session/sessionSchema.ts`, `src/contact/contactSchema.ts`, `src/views/viewsSchema.ts`). The server imports them via an extended `tsconfig.server.json` rather than a top-level `shared/` folder — one config edit, no domain dispersion. If the project later splits into separate packages, the move to `shared/` or a packages monorepo is a one-time migration the codebase will earn at that point.
+Zod schemas describing the API contract live with their domain on the client side (`src/session/sessionSchema.ts`, `src/contact/contactSchema.ts`, `src/organiser/viewsSchema.ts`). The server imports them via an extended `tsconfig.server.json` rather than a top-level `shared/` folder — one config edit, no domain dispersion. If the project later splits into separate packages, the move to `shared/` or a packages monorepo is a one-time migration the codebase will earn at that point.
 
 ### Transport
 `airtableFetch<T>(path: string, schema: ZodSchema<T>, init?: RequestInit): Promise<T>` — generic in the parsed type; the schema is a required argument, parsed at the transport boundary. This keeps transport reusable across domains and makes the expected shape visible at every call site.
@@ -154,7 +154,7 @@ phonebanker/
 │   ├── routes/                 # TanStack Router file-based routes (location fixed by router)
 │   ├── session/                # Session domain: schema, screens, store slice when split
 │   ├── contact/                # Contact + progress domain: schema, ContactCard, outcomes
-│   ├── views/                  # Airtable view-selection (organiser session setup)
+│   ├── organiser/              # Organiser session-planning page: view selection, script, message — co-located schema, hooks, store slice, components
 │   ├── shared/                 # Cross-cutting React primitives: Button, Input, layout, etc.
 │   ├── styles/                 # Global cross-cutting CSS (preflight, tokens, elements, layout)
 │   ├── store/                  # Zustand app store — single store while it earns no slicing
