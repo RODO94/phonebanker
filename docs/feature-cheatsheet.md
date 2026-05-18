@@ -205,10 +205,11 @@ Quick reference for building any feature in Phonebanker. Skim the relevant secti
 - **Typography roles** — `display`, `subtitle`, `body`, `interactive`, `caption`. **Geist Mono is the default UI font; Geist is the exception** (display + subtitle only). `interactive` covers buttons, input labels, and clickable card text.
 - **Colour categories** — `text`, `surface`, `border`, `action`. If the colour you want doesn't fit a category, that's a signal — either it belongs in a category you haven't named yet, or you're reaching for something the system shouldn't have.
 - **Adding a new token earns its place.** Three or more uses across genuinely similar problems, or it names a real role the system is missing. One-offs stay in the component's CSS until they recur.
-- **CSS is the source of truth; Figma is the reference.** When they diverge, update both — keep `tokens.css` authoritative. Don't import tokens *from* Figma; mirror by hand.
+- **CSS is the source of truth; Figma is the reference.** When they diverge, update both — keep the CSS files authoritative. Don't import tokens *from* Figma; mirror by hand.
 
 **Read more:**
-- [src/styles/tokens.css](../src/styles/tokens.css) — the authoritative list of every token
+- [src/styles/typography.css](../src/styles/typography.css) — type roles (display, subtitle, body, interactive, caption)
+- [src/styles/colors.css](../src/styles/colors.css) — colour primitives + semantic roles (text, surface, border, action)
 - [tech/patterns-and-conventions.md § CSS for a component](tech/patterns-and-conventions.md) — class-vs-attribute, nesting, mobile-first
 
 ---
