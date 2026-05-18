@@ -13,12 +13,13 @@ The existing member list. The organiser selects a View from this table for each 
 
 | Field | Type | Notes |
 |-------|------|-------|
-| Name | Text | Full name |
+| Name | Text | Full name. Also used by the bounded member search at join (case-insensitive, diacritic-stripped match). |
 | Phone number | Phone | Used by phonebanker to dial |
 | Tenancy type | Single select | e.g. private renter, social housing |
 | Contact type | Single select | Membership type |
 | Last call summary | Long text | Summary from most recent phone log; read-only in app |
-| Assigned phonebanker | Text | Name of the phonebanker currently assigned to this contact; written when a phonebanker clicks "Next person to call", cleared when an outcome is logged |
+| Assigned phonebanker | Link to Members | The Member record of the volunteer currently assigned to this contact (recordId). Written inside a mutex-guarded read-then-write at claim; cleared on outcome log, skip, or 30-minute timeout. |
+| Claimed at | DateTime | Timestamp written alongside `Assigned phonebanker` at claim time. Used to rebuild the 30-minute timeout queue after a server restart — makes the timeout durable across redeploys. Cleared together with `Assigned phonebanker`. |
 
 ### Sessions
 One record per phonebanking session.
@@ -40,7 +41,7 @@ One record per call attempt.
 | Log ID | Auto-generated | Primary key |
 | Session | Link to Sessions | Which session this call belongs to |
 | Contact | Link to Members | Who was called |
-| Phonebanker name | Text | Name entered at session join |
+| Phonebanker | Link to Members | The Member record of the volunteer who made the call (recordId, resolved at join). Nulled if the volunteer's Member record is deleted under GDPR — see [security-and-trust.md](security-and-trust.md). |
 | Outcome | Single select | Had a conversation / Wants to be removed / No answer / Skipped |
 | Message sent | Checkbox | Set on "No answer" outcomes when the volunteer sent the SMS / left a voicemail |
 | Timestamp | DateTime | When the call was logged |
@@ -61,14 +62,18 @@ The full outcome form (issues raised, RSVP, structured triage) is intentionally 
 
 ## App-managed state (not in Airtable)
 
-The following is tracked in-app (e.g. in server memory or a lightweight store) during a session and does not need its own Airtable table:
+The assignment coordinator in the Hono server holds a `Map<sessionId, SessionState>` in process memory. Each entry contains:
 
 | State | Purpose |
 |-------|---------|
-| Assignment timestamp | To trigger the 30-minute timeout and return contact to pool; complements `assigned_phonebanker` in Airtable |
-| Participants | One record per volunteer in the session: name, device tokens (one per open tab/device), currently-assigned contact. A participant can have N device tokens — supports same-volunteer-multi-device and tab-crash recovery. |
+| Per-session async mutex | Serialises assignment operations for that session (provided by `async-mutex`) |
+| Participant registry | The set of Member recordIds currently joined to the session. Identity is the recordId — no device tokens, no name-token reconciliation. |
+| Member directory cache | The session's Airtable view, loaded lazily on first member-search request and held for the session lifetime |
+| In-memory mirror | The coordinator's view of `assigned_phonebanker` / `claimed_at` per contact, used to serve polling reads. Writes always validate against Airtable inside the mutex; the mirror is updated after the Airtable write succeeds. |
 
-This state only needs to persist for the duration of a session. It can be cleared when a session ends.
+State is **never evicted** during the lifetime of the Hono process — process restart (deploy, crash, reboot) is the eviction mechanism. Memory cost is bounded (kilobytes per session, weekly sessions), and there are no cascading-state risks across sessions because the map is keyed by sessionId.
+
+Restart recovery is automatic: any method that takes a sessionId lazily rehydrates the corresponding `SessionState` on first touch. The 30-minute timeout queue is rebuilt by reading `claimed_at` from Airtable during hydration — no in-memory state is load-bearing for timeout correctness.
 
 ---
 
@@ -77,26 +82,44 @@ This state only needs to persist for the duration of a session. It can be cleare
 ```
 Airtable Members (View) ──read──►  App (session setup: organiser selects View)
                                              │
+                                  Phonebanker runs member search → picks themselves
+                                             │
+                              recordId becomes participantId for the session
+                                             │
                                   App shows one contact at a time to phonebanker
                                              │
                                   Phonebanker clicks "Next person to call"
                                              │
-                         ◄──write──  App sets assigned_phonebanker on Member record
+                                  Coordinator acquires per-session mutex
+                                             │
+                          ──read──►  Reads current assigned_phonebanker from Airtable
+                                             │
+                          ◄──write──  Writes assigned_phonebanker + claimed_at
+                                             │
+                                  Mutex released; in-memory mirror updated
                                              │
                                   Phonebanker logs outcome (picked up / no answer / skipped)
                                              │
                          ◄──write──  App writes Phone Log record to Airtable
-                                     App clears assigned_phonebanker on Member record
+                                     App clears assigned_phonebanker and claimed_at
 ```
+
+---
+
+## Concurrent sessions on the same base
+
+The assignment lock lives on the Member record, not on a session-contact pair. A contact appearing in two simultaneous sessions' views can only be locked by one of them at a time. **If two sessions run concurrently against the same Airtable base, their views must not overlap** — otherwise volunteers in session A and session B will compete for the same contact and one will appear locked when the other hasn't claimed it.
+
+The strategy assumes one session per base per night and this constraint isn't load-bearing. If concurrent sessions become a real requirement, the lock granularity needs to move from the Member record to a session-scoped record (a new `Session Assignments` table linking session × contact × phonebanker). Out of scope for MVP — recorded here as the future force.
 
 ---
 
 ## GDPR considerations
 
-- **Minimum exposure**: phonebankers see one contact record at a time; no list view, no search
+- **Minimum exposure**: phonebankers see one contact record at a time; no list view, no bulk search. The member search at join is bounded — 6-character minimum, up to 5 matches, no pagination — by GDPR design.
 - **No export**: the app provides no download, CSV, or print functionality
-- **No persistent auth**: phonebankers identify by name only — no account is created or stored
-- **Retention**: the app does not store member data locally; it is fetched from Airtable per request
-- **Access control**: the join link is the only access mechanism — organisers are responsible for sharing it appropriately
+- **No persistent auth**: phonebankers identify via member-record lookup at join — no account is created or stored locally
+- **Retention**: the app does not store member data locally; it is fetched from Airtable per request and cached in-process for the session's lifetime only
+- **Access control**: the join link plus the member-search gate together control access — see [security-and-trust.md](security-and-trust.md)
 - **Sensitive fields**: phone numbers are displayed to the assigned phonebanker only, for the duration of their assigned call
-- **Logs**: phone logs in Airtable record who called whom — organisers are responsible for managing retention in Airtable
+- **Phone Log attribution**: each Phone Log links to the volunteer's Member record (recordId) — stronger audit than a typed name. Deletion of a Member record under Article 17 nulls the `Phonebanker` reference on every Phone Log it points to, retaining the operational record. See [security-and-trust.md § GDPR](security-and-trust.md).

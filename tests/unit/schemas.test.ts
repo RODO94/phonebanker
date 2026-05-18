@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { ContactSchema, SessionSchema } from '@/schemas';
+import { SessionSchema } from '@/session/sessionSchema';
+import { ContactSchema } from '@/contact/contactSchema';
 
 describe('schemas', () => {
   it('parses a valid session', () => {

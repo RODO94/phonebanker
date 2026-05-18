@@ -1,13 +1,13 @@
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
-import { sessions } from './routes/sessions.js';
-import { views } from './routes/views.js';
+import { sessionRoutes } from './session/sessionRoutes.js';
+import { viewsRoutes } from './views/viewsRoutes.js';
 
 const app = new Hono();
 
 app.get('/health', (c) => c.json({ ok: true }));
-app.route('/api/sessions', sessions);
-app.route('/api/views', views);
+app.route('/api/sessions', sessionRoutes);
+app.route('/api/views', viewsRoutes);
 
 const port = Number(process.env.PORT ?? 3001);
 serve({ fetch: app.fetch, port }, (info) => {

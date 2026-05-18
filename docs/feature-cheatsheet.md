@@ -111,16 +111,35 @@ Quick reference for building any feature in Phonebanker. Skim the relevant secti
 > Anything where two open tabs need to agree on state.
 
 **Consider:**
-- Same-name + known device token = same participant; attach to existing session
-- Same-name + unknown device token = prompt to disambiguate ("already in this session, or different person?")
+- Identity is `participantId = member.recordId`. Same member on two devices is the same participant on both — no disambiguation prompt, no device tokens to reconcile.
 - Sync via polling (~5–10s) — no websockets in MVP
-- Either tab can log the outcome; other tab catches up on next poll
-- Same mechanism gives tab-crash recovery: rejoin → get assigned contact back
+- `claimNextUnassignedContact` is idempotent per participant: both tabs see the same assigned contact; either tab can log the outcome; the other catches up on next poll
+- Tab-crash recovery uses the same path: rejoin via member search → same recordId → idempotent claim returns the still-locked contact
 
 **Read more:**
 - [design/users-and-journeys.md](design/users-and-journeys.md) — edge case "Phonebanker uses two devices at once"
-- [tech/security-and-trust.md](tech/security-and-trust.md) — name collisions and same-volunteer multi-device
+- [tech/security-and-trust.md](tech/security-and-trust.md) — member identity and the join-link trust model
 - [design/scope.md](design/scope.md) — MVP polling vs. future real-time sync
+
+---
+
+## 🪪 Join flow / member identity
+
+> The member-search step at session join — anything that resolves a volunteer to a participant.
+
+**Consider:**
+- Search activates only after **6 characters** typed; debounced 2 seconds after the last keystroke, or submitted on Enter / Search button
+- Server-side resolver returns at most **5 matches**, ranked prefix > substring-on-word-boundary > substring-anywhere, alphabetised within rank
+- Normalise lower-case and strip diacritics for matching only; display the original casing
+- Zero results uses **two distinct messages**: "We couldn't find that name — try a different spelling" if the query looks like a real name attempt; "You may not be on our member list — speak to the organiser" once it's clear the search isn't finding anyone. Don't compress them.
+- Over-five matches: silently truncate and show a "type more letters to narrow down" hint. No pagination — browsing the directory is not the affordance.
+- Non-members cannot proceed past the join screen. The "speak to the organiser" message is the route, not an error.
+- The selected member's recordId becomes `participantId` for the rest of the session. It is the audit identity in Phone Logs.
+
+**Read more:**
+- [tech/security-and-trust.md](tech/security-and-trust.md) — trust model, join-link's load-bearing role
+- [design/users-and-journeys.md](design/users-and-journeys.md) — Journey 2 (phonebanker join)
+- [tech/data-and-airtable.md](tech/data-and-airtable.md) — Members table, recordId as identity
 
 ---
 
@@ -146,10 +165,11 @@ Quick reference for building any feature in Phonebanker. Skim the relevant secti
 > Anything touching the join link, who can join, audit trail, or session lifecycle.
 
 **Consider:**
-- No accounts, no passwords — first name + join link only
+- No accounts, no passwords. Identity is member-record lookup at join (see Join flow / member identity above).
+- The **join link is load-bearing** for the trust model — it gates access to the member search. Anyone with the link can run name queries; protect distribution accordingly.
 - Join link expires (end of session + window TBC); can be **regenerated** by organiser; old link → friendly "no longer active" page
-- Audit trail comes from existing Airtable Sessions + Phone Logs — don't add a separate access log
-- Rate-limit "next contact" per joined name (~1 per 5s)
+- Audit trail comes from existing Airtable Sessions + Phone Logs, now stronger because `participantId = member.recordId` rather than a typed string
+- Rate-limit "next contact" per participant (~1 per 5s)
 - Don't surface anything that depends on cross-session identity (no "welcome back, Sam")
 
 **Read more:**

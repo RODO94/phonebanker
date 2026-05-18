@@ -8,7 +8,8 @@
 - Session persists until all contacts are called or manually ended
 
 ### Phonebanker
-- Join a session by entering name (no account required)
+- Join a session by searching for their own member record (type at least 6 characters of their name, see up to 5 matches, pick themselves)
+- Non-members cannot join — the search returns zero matches and points them to the organiser
 - See one contact at a time (name, phone number, tenancy type, contact type, last call summary)
 - View call script on the same screen
 - Copy voicemail/SMS message to clipboard with one tap
@@ -20,12 +21,12 @@
 - See celebration screen when all contacts are called
 
 ### System
-- Prevent two phonebankers being assigned the same contact (via `assigned_phonebanker` field on Member record)
-- Return a contact to the pool after 30 minutes of inactivity (no outcome logged); clear `assigned_phonebanker`
-- Write a phone log record to Airtable for every call attempt (phonebanker name, contact, outcome, timestamp)
-- Write `assigned_phonebanker` to Member record when a contact is assigned; clear it when outcome is logged
+- Resolve volunteer identity by member-record lookup at join — `participantId` is the volunteer's Airtable Member recordId. Two volunteers sharing a first name are distinct by recordId; a single volunteer using two devices is the same participant on both.
+- Prevent two phonebankers being assigned the same contact via a mutex-guarded read-then-write against the `assigned_phonebanker` field on the Member record. The coordinator is the sole writer.
+- Return a contact to the pool after 30 minutes of inactivity (no outcome logged); clear `assigned_phonebanker` and `claimed_at`. The `claimed_at` field on the Member record makes the timeout durable across server restart.
+- Write a phone log record to Airtable for every call attempt (phonebanker recordId, contact, outcome, timestamp)
 - Read member data from Airtable (no local storage of PII)
-- Support a volunteer using multiple devices simultaneously: same name + device token attaches to the same participant session; both tabs poll (~5–10s) and stay in sync. Same mechanism handles tab-crash recovery — a rejoining volunteer gets their assigned contact back.
+- Support a volunteer using multiple devices simultaneously: both devices identify as the same `participantId` after the member-search step, both poll (~5–10s) and see the same assigned contact. Tab-crash recovery uses the same path — rejoining via the member search returns the still-locked contact.
 
 ---
 
@@ -40,7 +41,8 @@
 | Member sign-up or account creation | This is a calling tool, not a membership platform |
 | Editing Airtable base structure from the app | Airtable is managed separately |
 | Multi-session history / reporting | Airtable handles this |
-| Phonebanker authentication | Name-only entry is sufficient for the trust model of union volunteers |
+| Phonebanker authentication (passwords, accounts, magic links) | Member-record lookup at join plus the shared join link is the trust model — see [security-and-trust.md](../tech/security-and-trust.md) |
+| Browsing the member list | Member search returns at most 5 matches after a 6-character minimum query — by design, not a directory browser |
 | Exporting call data from the app | GDPR constraint; Airtable is the record of truth |
 
 ---
@@ -59,6 +61,7 @@
 ## Technical constraints (inform build decisions)
 
 - Airtable API is the data layer — all member reads and log writes go through it
-- No persistent user accounts — session state (assignments, joins) lives in server memory or a lightweight store for the duration of a session only
+- No persistent user accounts — session state (assignments, joins) lives in server memory for the duration of a session only; durable lock state lives in Airtable (`assigned_phonebanker` + `claimed_at`)
+- Concurrent sessions on the same Airtable base must use **non-overlapping views** — the lock field is on the Member record, so a contact appearing in two simultaneous sessions' views can only be locked by one of them
 - Must work well on mobile (phonebankers are likely on their phone while calling)
 - Must work across distributed remote users simultaneously (concurrent session support from day one)
