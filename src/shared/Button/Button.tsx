@@ -1,6 +1,6 @@
 import './Button.css';
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'link';
 
 type ButtonProps = {
   variant?: ButtonVariant;

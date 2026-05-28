@@ -2,8 +2,8 @@ export const TEMPLATE_VARIABLES = ['contactName', 'phonebankerName'] as const;
 export type TemplateVariable = (typeof TEMPLATE_VARIABLES)[number];
 
 export const TEMPLATE_PLACEHOLDERS: Record<TemplateVariable, string> = {
-  contactName: 'their name',
-  phonebankerName: 'your name',
+  contactName: 'Member McMemberson',
+  phonebankerName: 'Phonebanker McPhonebankerson',
 };
 
 export function variableToken(variable: TemplateVariable): string {

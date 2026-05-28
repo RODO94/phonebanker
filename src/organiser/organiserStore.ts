@@ -1,16 +1,18 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { View } from './types/viewsSchema';
+import type { View } from '@/view/viewsSchema';
 
-export const ORGANISER_STEPS = ['view', 'script', 'message', 'review'] as const;
+export const ORGANISER_STEPS = ['identify', 'view', 'script', 'message', 'review'] as const;
 export type OrganiserStep = (typeof ORGANISER_STEPS)[number];
 
 type OrganiserState = {
   step: OrganiserStep;
+  organiserName: string;
   selectedView: View | null;
   callScript: string;
   smsMessage: string;
   setStep: (step: OrganiserStep) => void;
+  setOrganiserName: (name: string) => void;
   selectView: (view: View) => void;
   setCallScript: (script: string) => void;
   setSmsMessage: (message: string) => void;
@@ -19,8 +21,12 @@ type OrganiserState = {
   reset: () => void;
 };
 
-const INITIAL: Pick<OrganiserState, 'step' | 'selectedView' | 'callScript' | 'smsMessage'> = {
-  step: 'view',
+const INITIAL: Pick<
+  OrganiserState,
+  'step' | 'organiserName' | 'selectedView' | 'callScript' | 'smsMessage'
+> = {
+  step: 'identify',
+  organiserName: '',
   selectedView: null,
   callScript: '',
   smsMessage: '',
@@ -41,6 +47,7 @@ export const useOrganiserStore = create<OrganiserState>()(
     (set) => ({
       ...INITIAL,
       setStep: (step) => set({ step }),
+      setOrganiserName: (organiserName) => set({ organiserName }),
       selectView: (selectedView) => set({ selectedView }),
       setCallScript: (callScript) => set({ callScript }),
       setSmsMessage: (smsMessage) => set({ smsMessage }),
@@ -53,6 +60,7 @@ export const useOrganiserStore = create<OrganiserState>()(
       storage: createJSONStorage(() => sessionStorage),
       partialize: (s) => ({
         step: s.step,
+        organiserName: s.organiserName,
         selectedView: s.selectedView,
         callScript: s.callScript,
         smsMessage: s.smsMessage,

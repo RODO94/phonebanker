@@ -19,10 +19,10 @@
 
   /* Display ───────────────────────────────────────────────────────── */
   --font-display: var(--font-sans);
-  --size-display: 45px;
-  --lh-display: 52px;
-  --weight-display: 400;
-  --track-display: 0;
+  --size-display: 32px;
+  --lh-display: 41.6px;
+  --weight-display: 500;
+  --track-display: 0.4063px;
 
   /* Subtitle ──────────────────────────────────────────────────────── */
   --font-subtitle: var(--font-sans);

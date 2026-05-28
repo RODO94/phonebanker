@@ -1,24 +1,37 @@
 .message-writer {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 32px;
 
-  & .editor {
-    display: grid;
-    grid-template-columns: 1fr;
+  & header {
+    display: flex;
+    flex-direction: column;
     gap: 16px;
   }
 
-  & .editor-column {
+  & .editor {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
+  }
+
+  & .char-count {
+    align-self: flex-end;
+    font-family: var(--font-body);
+    font-size: var(--size-body);
+    line-height: var(--lh-body);
+    color: var(--color-text-secondary);
+  }
+
+  & .char-count.over-limit {
+    color: var(--color-action-primary);
   }
 
   & .variables {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
+    margin-top: 4px;
   }
 
   & .variable-chip {
@@ -42,22 +55,27 @@
     outline-offset: 2px;
   }
 
-  & .preview {
+  & .preview-wrap {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 16px;
-    background: var(--color-surface-callout);
-    border: 1px solid var(--color-border-divider);
-    border-radius: 4px;
-    min-height: 200px;
+    gap: 12px;
   }
 
   & .preview-label {
-    font-family: var(--font-caption);
-    font-size: var(--size-caption);
-    line-height: var(--lh-caption);
-    color: var(--color-text-secondary);
+    font-family: var(--font-interactive);
+    font-size: var(--size-interactive);
+    line-height: 28.5px;
+    font-weight: var(--weight-interactive);
+    letter-spacing: -0.4453px;
+    color: var(--color-text-primary);
+  }
+
+  & .preview {
+    padding: 20px 24px;
+    background: var(--color-surface-raised);
+    border-left: 4px solid var(--color-action-success);
+    border-radius: 6px;
+    box-shadow: 0 1px 1.5px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.1);
   }
 
   & .preview-body {
@@ -75,10 +93,12 @@
     margin-bottom: 0;
   }
 
-  @media (min-width: 768px) {
-    & .editor {
-      grid-template-columns: 1fr 1fr;
-      align-items: start;
-    }
+  & .preview-note {
+    font-family: var(--font-body);
+    font-size: var(--size-body);
+    line-height: var(--lh-body);
+    font-style: italic;
+    color: var(--color-text-secondary);
+    margin: 0;
   }
 }

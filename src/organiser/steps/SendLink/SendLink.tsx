@@ -21,6 +21,7 @@ function buildJoinUrl(sessionId: string): string {
 }
 
 export const SendLink = () => {
+  const organiserName = useOrganiserStore((s) => s.organiserName);
   const selectedView = useOrganiserStore((s) => s.selectedView);
   const callScript = useOrganiserStore((s) => s.callScript);
   const smsMessage = useOrganiserStore((s) => s.smsMessage);
@@ -43,6 +44,7 @@ export const SendLink = () => {
       const session = await apiFetch('/sessions', SessionSchema, {
         method: 'POST',
         body: JSON.stringify({
+          organiserName,
           viewId: selectedView.id,
           viewName: selectedView.name,
           callScript,
@@ -66,89 +68,83 @@ export const SendLink = () => {
     }
   }
 
-  function startAnother() {
-    reset();
-  }
-
-  if (state.kind === 'success') {
-    const joinUrl = buildJoinUrl(state.session.id);
-    return (
-      <section className="send-link">
-        <header>
-          <h1 className="step-heading">Your session is live</h1>
-          <p className="step-subhead">
-            Share this link with your phonebankers. They'll search for themselves to join.
-          </p>
-        </header>
-
-        <div className="join-link">
-          <span className="review-label">Join link</span>
-          <div className="join-link-url">
-            <code>{joinUrl}</code>
-          </div>
-          <div className="actions">
-            <Button variant="primary" onClick={() => copyJoinLink(joinUrl)}>
-              {copied ? 'Copied' : 'Copy link'}
-            </Button>
-            <Button variant="secondary" onClick={startAnother}>
-              Start another session
-            </Button>
-          </div>
-          {copied && <span className="copy-status">Link copied to clipboard.</span>}
-        </div>
-      </section>
-    );
-  }
+  const isSuccess = state.kind === 'success';
+  const isSubmitting = state.kind === 'submitting';
+  const joinUrl = isSuccess ? buildJoinUrl(state.session.id) : null;
 
   return (
     <section className="send-link">
       <header>
-        <h1 className="step-heading">Ready to share?</h1>
-        <p className="step-subhead">
-          Have a last look. You can still go back and edit anything.
-        </p>
+        <h1 className="step-heading">{isSuccess ? 'Ready to phonebank!' : 'Ready to share?'}</h1>
+        {!isSuccess && (
+          <p className="step-subhead">Have a last look. You can still go back and edit anything.</p>
+        )}
       </header>
 
-      <div className="review">
-        <div className="review-card">
-          <span className="review-label">Contact list</span>
-          <span className="review-value">{selectedView?.name ?? '—'}</span>
+      <div className="review-card">
+        <div className="review-section">
+          <h2 className="review-title">{selectedView?.name ?? 'No list selected'}</h2>
         </div>
-
-        <div className="review-card">
-          <span className="review-label">Call script</span>
-          <div
-            className="review-body"
-            dangerouslySetInnerHTML={{ __html: scriptHtml }}
-          />
+        <div className="review-section">
+          <span className="review-label">Script</span>
+          <div className="review-body" dangerouslySetInnerHTML={{ __html: scriptHtml }} />
         </div>
-
-        <div className="review-card">
-          <span className="review-label">Voicemail / SMS message</span>
-          <div
-            className="review-body"
-            dangerouslySetInnerHTML={{ __html: messageHtml }}
-          />
+        <div className="review-section">
+          <span className="review-label">Message</span>
+          <div className="review-body" dangerouslySetInnerHTML={{ __html: messageHtml }} />
         </div>
       </div>
 
-      {state.kind === 'error' && (
-        <p className="error">
-          Couldn't create the session — {state.message}. Have another go.
+      <div className="share-callout">
+        {isSuccess && joinUrl ? (
+          <>
+            <span className="share-heading">Share this link</span>
+            <div className="share-url">
+              <code>{joinUrl}</code>
+            </div>
+            <Button variant="primary" fullWidth onClick={() => copyJoinLink(joinUrl)}>
+              {copied ? 'Copied' : 'Copy link'}
+            </Button>
+            <Button
+              variant="secondary"
+              fullWidth
+              onClick={() => window.open(joinUrl, '_blank', 'noopener')}
+            >
+              Open
+            </Button>
+          </>
+        ) : (
+          <Button
+            variant="primary"
+            fullWidth
+            disabled={!selectedView || isSubmitting}
+            onClick={submit}
+          >
+            {isSubmitting ? 'Creating…' : 'Submit session'}
+          </Button>
+        )}
+      </div>
+
+      {isSuccess && (
+        <p className="share-note">
+          Share this link in your WhatsApp group. Anyone with the link can join — no password needed.
         </p>
       )}
 
-      <div className="actions">
-        <Button variant="secondary" onClick={goBack} disabled={state.kind === 'submitting'}>
-          Back
-        </Button>
-        <Button
-          variant="primary"
-          disabled={!selectedView || state.kind === 'submitting'}
-          onClick={submit}
-        >
-          {state.kind === 'submitting' ? 'Creating…' : 'Submit session'}
-        </Button>
+      {state.kind === 'error' && (
+        <p className="error">Couldn't create the session — {state.message}. Have another go.</p>
+      )}
+
+      <div className="actions-back">
+        {isSuccess ? (
+          <Button variant="link" onClick={reset}>
+            Start another session
+          </Button>
+        ) : (
+          <Button variant="link" onClick={goBack} disabled={isSubmitting}>
+            Back
+          </Button>
+        )}
       </div>
     </section>
   );

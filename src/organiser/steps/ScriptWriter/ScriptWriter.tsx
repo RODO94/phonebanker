@@ -20,9 +20,10 @@ export const ScriptWriter = () => {
   return (
     <section className="script-writer">
       <header>
-        <h1 className="step-heading">Write your call script</h1>
+        <h1 className="step-heading">What should volunteers say?</h1>
         <p className="step-subhead">
-          What should phonebankers say? Use markdown — **bold**, *italic*, and lists work.
+          Volunteers will read this on screen during every call. Use short sections with headings — 'Why
+          we're calling', 'Key points', 'If they ask about X'.
         </p>
       </header>
 
@@ -30,7 +31,6 @@ export const ScriptWriter = () => {
         <Textarea
           id="call-script"
           label="Script"
-          hint="Markdown supported. Keep it short — phonebankers will read it on a small screen."
           value={callScript}
           onChange={setCallScript}
           placeholder="Hi, this is [your name] from London Renters Union…"
@@ -38,20 +38,19 @@ export const ScriptWriter = () => {
 
         <div className="preview" aria-live="polite">
           <span className="preview-label">Preview</span>
-          <div
-            className="preview-body"
-            dangerouslySetInnerHTML={{ __html: previewHtml }}
-          />
+          <div className="preview-body" dangerouslySetInnerHTML={{ __html: previewHtml }} />
         </div>
       </div>
 
       <div className="actions">
-        <Button variant="secondary" onClick={goBack}>
-          Back
-        </Button>
-        <Button variant="primary" disabled={!canContinue} onClick={goNext}>
+        <Button variant="primary" fullWidth disabled={!canContinue} onClick={goNext}>
           Continue
         </Button>
+        <div className="actions-back">
+          <Button variant="link" onClick={goBack}>
+            Back
+          </Button>
+        </div>
       </div>
     </section>
   );

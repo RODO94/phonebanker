@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/shared/api/apiFetch';
 import { Button } from '@/shared/Button/Button';
-import { ViewListSchema, type View } from '../../types/viewsSchema';
+import { ViewListSchema, type View } from '@/view/viewsSchema';
 import { useOrganiserStore } from '../../organiserStore';
 import './ViewSelection.css';
 
@@ -40,8 +40,10 @@ export const ViewSelection = () => {
   return (
     <section className="view-selection">
       <header>
-        <h1 className="step-heading">Who are you calling?</h1>
-        <p className="step-subhead">Pick the Airtable view that holds tonight's contact list.</p>
+        <h1 className="step-heading">Who are we calling tonight?</h1>
+        <p className="step-subhead">
+          Pick a list from Airtable. We'll only show contacts in this view.
+        </p>
       </header>
 
       {state.kind === 'loading' && <p className="status">Loading your views…</p>}
@@ -58,23 +60,27 @@ export const ViewSelection = () => {
       )}
       {state.kind === 'ready' && state.views.length > 0 && (
         <ul className="views">
-          {state.views.map((view) => (
-            <li key={view.id}>
-              <button
-                type="button"
-                className="view-option"
-                aria-pressed={selectedView?.id === view.id}
-                onClick={() => selectView(view)}
-              >
-                {view.name}
-              </button>
-            </li>
-          ))}
+          {state.views.map((view) => {
+            const isSelected = selectedView?.id === view.id;
+            return (
+              <li key={view.id}>
+                <button
+                  type="button"
+                  className="view-option"
+                  aria-pressed={isSelected}
+                  onClick={() => selectView(view)}
+                >
+                  <span className="radio" aria-hidden="true" />
+                  <span className="view-name">{view.name}</span>
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
 
       <div className="actions">
-        <Button variant="primary" disabled={!selectedView} onClick={goNext}>
+        <Button variant="primary" fullWidth disabled={!selectedView} onClick={goNext}>
           Continue
         </Button>
       </div>

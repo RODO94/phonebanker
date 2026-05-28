@@ -2,38 +2,15 @@
   display: flex;
   flex-direction: column;
   gap: 32px;
-  max-width: 640px;
+  max-width: 540px;
   margin: 0 auto;
-  padding: 32px 16px;
-
-  & .progress {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
+  padding: 24px 16px 48px;
 
   & .progress-label {
-    font-family: var(--font-caption);
-    font-size: var(--size-caption);
-    line-height: var(--lh-caption);
+    font-family: var(--font-body);
+    font-size: var(--size-body);
+    line-height: var(--lh-body);
     color: var(--color-text-secondary);
-  }
-
-  & .progress-bar {
-    display: flex;
-    gap: 4px;
-  }
-
-  & .progress-bar-step {
-    flex: 1;
-    height: 4px;
-    background: var(--color-border-divider);
-    border-radius: 2px;
-  }
-
-  & .progress-bar-step[data-state="active"],
-  & .progress-bar-step[data-state="complete"] {
-    background: var(--color-action-primary);
   }
 
   & .step-heading {
@@ -41,24 +18,29 @@
     font-size: var(--size-display);
     line-height: var(--lh-display);
     font-weight: var(--weight-display);
+    letter-spacing: var(--track-display);
+    color: var(--color-text-primary);
     margin: 0;
   }
 
   & .step-subhead {
     font-family: var(--font-subtitle);
-    font-size: var(--size-subtitle);
-    line-height: var(--lh-subtitle);
-    color: var(--color-text-secondary);
+    font-size: 19px;
+    line-height: 30.4px;
+    letter-spacing: -0.4453px;
+    color: var(--color-text-primary);
     margin: 0;
   }
 
   & .actions {
     display: flex;
-    gap: 12px;
-    justify-content: flex-end;
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
   }
 
-  & .actions > .button {
-    min-width: 140px;
+  & .actions-back {
+    display: flex;
+    justify-content: flex-start;
   }
 }

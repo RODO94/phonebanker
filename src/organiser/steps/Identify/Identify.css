@@ -1,0 +1,44 @@
+.identify {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+
+  & header {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  & .identify-field {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  & .identify-label {
+    font-family: var(--font-interactive);
+    font-size: 22px;
+    line-height: 30.8px;
+    font-weight: 500;
+    letter-spacing: -0.2578px;
+    color: var(--color-text-primary);
+  }
+
+  & .identify-input {
+    width: 100%;
+    height: 64px;
+    padding: 0 16px;
+    font-family: var(--font-body);
+    font-size: var(--size-body);
+    line-height: var(--lh-body);
+    color: var(--color-text-primary);
+    background: var(--color-surface-raised);
+    border: 2px solid var(--color-border-strong);
+    border-radius: 0;
+  }
+
+  & .identify-input:where(:focus-visible) {
+    outline: 2px solid var(--color-action-primary);
+    outline-offset: 2px;
+  }
+}
