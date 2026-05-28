@@ -1,0 +1,24 @@
+---
+description: React component props—TypeScript interfaces, naming, and shapes.
+globs: front_end/v2/**/*.tsx, front_end/v2/**/*.jsx
+alwaysApply: false
+---
+
+# React props
+
+## Typing
+
+* Define props with a **TypeScript interface** named **`XxxProps`** (e.g. `UserCardProps`).
+
+## Shape and naming
+
+* **Prefer primitive props** over passing large object blobs when a few fields are enough; keeps components easier to test and reuse.
+* Name event-style callbacks **`onXxx`**: `onClick`, `onSubmit`, `onEdit`, etc.
+
+```tsx
+interface UserCardProps {
+  name: string
+  email: string
+  onEdit: (id: string) => void
+}
+```

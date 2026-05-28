@@ -1,0 +1,45 @@
+---
+description: Custom React hooks and useEffect rules. Apply when adding or editing use*.ts or hook logic in .tsx.
+globs: front_end/v2/**/*.tsx, front_end/v2/**/use*.ts
+alwaysApply: false
+---
+
+# React hooks
+
+## Custom hooks
+
+* Hook file names must use the **`use` prefix** (e.g. `useAuth.ts`).
+* A hook should **do one thing**; split unrelated behavior into separate hooks.
+
+## useEffect
+
+* **`useEffect` must declare a correct dependency array.** Suppressing lint with `// eslint-disable-next-line` for dependencies is forbidden; fix the effect or the dependencies.
+* Effects that subscribe, fetch, or attach listeners **must return a cleanup** function when the runtime supports it.
+* **Do not pass an async function directly to `useEffect`**; the effect callback must be synchronous; perform async work inside a nested function.
+
+**Forbidden:**
+
+```tsx
+useEffect(async () => {
+  const data = await fetchData()
+  setData(data)
+}, [])
+```
+
+**Correct:**
+
+```tsx
+useEffect(() => {
+  const controller = new AbortController()
+  const load = async () => {
+    try {
+      const data = await fetchData({ signal: controller.signal })
+      setData(data)
+    } catch (error) {
+      if (!controller.signal.aborted) setError(error)
+    }
+  }
+  void load()
+  return () => controller.abort()
+}, [])
+```

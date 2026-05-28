@@ -1,0 +1,19 @@
+---
+description: React component structure, size, and responsibilities. Apply when editing v2 .tsx / .jsx components.
+globs: front_end/v2/**/*.tsx, front_end/v2/**/*.jsx
+alwaysApply: false
+---
+
+# React components
+
+## Rules
+
+* Use **function components only**; class components are forbidden.
+* A single component file must **not exceed 200 lines**.
+* Components are responsible **only for UI**; extract business logic into **custom hooks**.
+* **Complex expressions in JSX are forbidden**; extract them into variables or named functions and reference those in JSX.
+* A file should **export only one component**, except small local helper components that are clearly subordinate to that component.
+
+## UI vs logic
+
+Keep rendering and event wiring in the component; move data fetching, non-trivial derivation, and domain rules into hooks or shared modules, then call them from the component.

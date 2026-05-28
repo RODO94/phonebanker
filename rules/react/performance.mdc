@@ -1,0 +1,19 @@
+---
+description: React performance patterns—memo, useMemo, useCallback, and list keys.
+globs: front_end/v2/**/*.tsx, front_end/v2/**/*.jsx
+alwaysApply: false
+---
+
+# React performance
+
+## Memoization
+
+* Use **`React.memo` only when there is a measured or clearly justified performance issue**; do not wrap components preemptively.
+* Use **`useMemo` and `useCallback` only when**:
+    * The derived value is **computationally expensive**, or
+    * The value is a **dependency of another hook** and identity stability matters, or
+    * The value is **passed as props to a child wrapped in `React.memo`**.
+
+## Lists
+
+* List items must use **stable, unique keys** (e.g. ids). **Using the array index as `key` is forbidden** when the list can reorder, filter, or insert items.

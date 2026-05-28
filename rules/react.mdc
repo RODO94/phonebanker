@@ -1,0 +1,34 @@
+---
+description: Master rule for React UI and hooks. Delegates to focused sub-rules.
+globs: front_end/v2/**/*.tsx, front_end/v2/**/*.jsx, front_end/v2/**/use*.ts
+alwaysApply: false
+---
+
+# Rules for writing React code
+
+Parent guide for React components and custom hooks. Detailed standards live under `.cursor/rules/react/`. General TypeScript conventions (exports, types, naming) are in @typescript.mdc.
+
+## Sub-rules
+
+Consult these for specific conventions.
+
+* **Components**: @react/components.mdc
+    * Function components only; file size; UI vs logic; JSX complexity; exports
+
+* **State management**: @react/state.mdc
+    * `useState` / `useReducer`; colocation; Context vs Zustand; prop drilling
+
+* **Hooks**: @react/hooks.mdc
+    * Naming; single responsibility; `useEffect` dependencies, cleanup, async
+
+* **Performance**: @react/performance.mdc
+    * `React.memo`, `useMemo`, `useCallback`; list keys
+
+* **Props**: @react/props.mdc
+    * `XxxProps` interfaces; primitives; `onXxx` callbacks
+
+* **Errors and async UI**: @react/error-handling.mdc
+    * Error boundaries; loading / error / empty; user-facing messages
+
+* **Styling**: @react/styling.mdc
+    * No `!important`

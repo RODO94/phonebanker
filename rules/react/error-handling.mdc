@@ -1,0 +1,16 @@
+---
+description: Error boundaries and async UI states in React.
+globs: front_end/v2/**/*.tsx, front_end/v2/**/*.jsx
+alwaysApply: false
+---
+
+# React errors and async UI
+
+## Error boundaries
+
+* **Page-level** (or route-level) components **must be behind an error boundary** so render failures do not blank the entire app without recovery UI.
+
+## Async and remote data
+
+* Async operations must handle **loading**, **error**, and **empty** states explicitly in the UI.
+* **User-visible error messages** should be friendly and actionable; **log raw errors** (e.g. `console.error`) for debugging without exposing internals to end users.

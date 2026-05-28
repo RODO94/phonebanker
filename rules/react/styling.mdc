@@ -1,0 +1,9 @@
+---
+description: CSS and styling constraints for React UI.
+globs: front_end/v2/**/*.tsx, front_end/v2/**/*.jsx, front_end/v2/**/*.css
+alwaysApply: false
+---
+
+# React styling
+
+* **`!important` is forbidden** in stylesheets and CSS-in-JS unless an explicit exception is documented for a known third-party override (default: do not use it).

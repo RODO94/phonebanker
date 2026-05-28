@@ -1,0 +1,35 @@
+---
+description: React state colocation, Context, Zustand, and prop-drilling limits.
+globs: front_end/v2/**/*.tsx, front_end/v2/**/*.jsx, front_end/v2/**/use*.ts
+alwaysApply: false
+---
+
+# React state management
+
+## Local and shared state
+
+* Use **`useState`** for component-local state.
+* Use **`useReducer`** when state transitions are non-trivial or interdependent.
+* Keep state **as close as possible** to where it is used; do not lift state without a clear need (e.g. legitimate sharing between siblings).
+
+## Cross-component sharing
+
+* Use **Context** for small amounts of broadly needed state (theme, current user id, etc.).
+* Use **Zustand** (or an equivalent store) when global state is large, frequently updated, or needs clear boundaries outside the tree.
+* **Prop drilling beyond two levels is forbidden.** Prefer Context, a store, or composition (e.g. render props / children) instead of threading the same props through three or more layers.
+
+## Anti-pattern vs Context
+
+**Avoid:** passing the same prop through intermediate components only to reach a deep child.
+
+**Prefer:** a provider near the subtree that needs the data, plus a small consumer hook that throws if used outside the provider.
+
+```tsx
+const UserContext = createContext<User | null>(null)
+
+export const useUser = (): User => {
+  const user = useContext(UserContext)
+  if (!user) throw new Error('useUser must be used within UserProvider')
+  return user
+}
+```
