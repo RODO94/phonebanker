@@ -1,0 +1,89 @@
+.done {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding-top: 48px;
+}
+
+/* ----  Header  -------------------------------------------------------- */
+
+.done-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.done-title {
+  font-family: var(--font-display);
+  font-size: var(--size-display);
+  line-height: var(--lh-display);
+  font-weight: var(--weight-display);
+  letter-spacing: var(--track-display);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.done-subtitle {
+  font-family: var(--font-subtitle);
+  font-size: var(--size-subtitle);
+  line-height: var(--lh-subtitle);
+  font-weight: var(--weight-subtitle);
+  letter-spacing: var(--track-subtitle);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* ----  Stats  --------------------------------------------------------- */
+
+.done-stats {
+  display: flex;
+  justify-content: center;
+  gap: 48px;
+  margin: 0;
+}
+
+.done-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.done-stat-label {
+  font-family: var(--font-caption);
+  font-size: var(--size-caption);
+  line-height: var(--lh-caption);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.done-stat-value {
+  font-family: var(--font-display);
+  font-size: var(--size-display);
+  line-height: var(--lh-display);
+  font-weight: var(--weight-display);
+  letter-spacing: var(--track-display);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+/* ----  Actions  ------------------------------------------------------- */
+
+.done-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ----  Handoff  ------------------------------------------------------- */
+
+.done-handoff {
+  font-family: var(--font-body);
+  font-size: var(--size-body);
+  line-height: var(--lh-body);
+  color: var(--color-text-secondary);
+  text-align: center;
+  margin: 0;
+}

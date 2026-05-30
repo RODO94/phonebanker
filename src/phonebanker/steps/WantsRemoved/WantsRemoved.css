@@ -1,0 +1,80 @@
+.wants-removed {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ----  Loading / empty state  ----------------------------------------- */
+
+.wants-removed-loading {
+  font-family: var(--font-body);
+  font-size: var(--size-body);
+  line-height: var(--lh-body);
+  color: var(--color-text-secondary);
+  text-align: center;
+  padding: 48px 0;
+}
+
+/* ----  Header  -------------------------------------------------------- */
+
+.wants-removed-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wants-removed-name {
+  font-family: var(--font-display);
+  font-size: var(--size-display);
+  line-height: var(--lh-display);
+  font-weight: var(--weight-display);
+  letter-spacing: var(--track-display);
+  color: var(--color-text-primary);
+  margin: 0;
+  word-break: break-word;
+}
+
+/* ----  Confirmation text  --------------------------------------------- */
+
+.wants-removed-confirm {
+  font-family: var(--font-interactive);
+  font-size: var(--size-interactive);
+  line-height: var(--lh-interactive);
+  font-weight: var(--weight-interactive);
+  letter-spacing: var(--track-interactive);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.wants-removed-explanation {
+  font-family: var(--font-body);
+  font-size: var(--size-body);
+  line-height: var(--lh-body);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* ----  Error  --------------------------------------------------------- */
+
+.wants-removed-error {
+  font-family: var(--font-body);
+  font-size: var(--size-body);
+  line-height: var(--lh-body);
+  color: var(--color-action-primary);
+  margin: 0;
+}
+
+/* ----  Actions  ------------------------------------------------------- */
+
+.wants-removed-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ----  Back link  ----------------------------------------------------- */
+
+.wants-removed-back {
+  display: flex;
+  justify-content: center;
+}
