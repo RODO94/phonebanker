@@ -3,7 +3,7 @@
 A running status check on the Phonebanker service. Updated as features land or
 gaps appear. Two questions only: **what works** and **what doesn't (yet)**.
 
-Last updated: 2026-05-28
+Last updated: 2026-05-30
 
 ---
 
@@ -73,8 +73,21 @@ yet to be tested).
 
 ---
 
+**Phonebanker foundation (Segment 0) — the contract and shell.**
+The nine-route API surface is reconciled to [tech-stack.md](../docs/tech/tech-stack.md);
+all phonebanker schemas exist (`joinSchema`, `sessionStateSchema`, `assignmentSchema`,
+`ClaimResult`, `outcomeSchema`, tightened `SessionStatus`). The `phonebankerStore`
+and `Phonebanker` router shell are in place with seven screen placeholders behind a
+step machine, mounted at `/session/:id`. Server routes return schema-valid mocks so
+the screens can be built against real HTTP. `npm run lint` is clean. The unused
+`appStore` was removed.
+
+---
+
 ## What's next
 
-The phonebanker join + call-tracking flow. See
-[phonebanker-flow.md](phonebanker-flow.md) for the plan, file layout,
-and the key design decisions to make before code lands.
+The work is cut into three segments that build against the Segment 0 contract.
+Read **[segment-0-foundation.md](segment-0-foundation.md)** first — it carries the
+contract, the resolved decisions, the screen→step map, and a per-segment kickoff
+guide. Sequence: **A (server truth) → B1 (entry screens) → B2 (call loop)**, each
+in a fresh session.

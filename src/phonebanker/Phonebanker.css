@@ -1,0 +1,6 @@
+/* Scaffold container only. Real layout + spacing tokens are a screen-segment
+   concern — each screen owns its co-located CSS. */
+.phonebanker {
+  max-width: 32rem;
+  margin: 0 auto;
+}

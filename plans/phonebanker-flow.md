@@ -1,3 +1,10 @@
+> **Superseded in part by [segment-0-foundation.md](segment-0-foundation.md).**
+> The API contract, the four "Open questions" below, and the route list in
+> _Server file layout_ are now resolved there — that doc is authoritative for the
+> nine-route surface (note `POST /:id/next` and the added `/members/search` +
+> `/state`). This plan remains the source for scope, sequencing, and the
+> load-bearing design points.
+
 # Plan — Phonebanker Join + Call Tracking
 
 The next phase of the service: a volunteer opens a join link, identifies
