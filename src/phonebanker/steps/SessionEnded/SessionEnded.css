@@ -1,0 +1,37 @@
+.session-ended {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+
+  & .session-ended-header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  & .session-ended-heading {
+    font-family: var(--font-display);
+    font-size: var(--size-display);
+    line-height: var(--lh-display);
+    font-weight: var(--weight-display);
+    letter-spacing: var(--track-display);
+    color: var(--color-text-primary);
+    margin: 0;
+  }
+
+  & .session-ended-body {
+    font-family: var(--font-body);
+    font-size: var(--size-body);
+    line-height: var(--lh-body);
+    letter-spacing: var(--track-body);
+    color: var(--color-text-primary);
+    margin: 0;
+  }
+
+  & .session-ended-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+}
