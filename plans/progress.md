@@ -3,7 +3,7 @@
 A running status check on the Phonebanker service. Updated as features land or
 gaps appear. Two questions only: **what works** and **what doesn't (yet)**.
 
-Last updated: 2026-05-30 (Segment A — complete)
+Last updated: 2026-05-30 (Segments A, B1, B2 — complete)
 
 ---
 
@@ -76,31 +76,29 @@ skip/release, 30-minute timeout, burn-down, participant gates, search
 bounds, and schema validation. An env-gated Playwright HTTP concurrency
 test exists for a pre-seeded Airtable session.
 
+**Phonebanker entry screens (Segment B1).**
+The Join screen implements debounced member search (6-char floor, top-5
+results), join with participant registration, session-status gate, and
+claim-state-driven step transitions. AlreadyJoined shows a resumption
+interstitial for two-device/tab-crash scenarios. SessionEnded provides
+honest copy and a link back to the organiser flow.
+
+**Phonebanker call-loop screens (Segment B2).**
+AssignedContact renders the full contact card (name, tel: link,
+collapsible summary, call script via `marked`, copy-SMS button,
+burn-down counter, outcome buttons). NoAnswerFollowUp captures
+message-sent flagging. WantsRemoved confirms the flag with
+organiser-expectation copy. Done shows a celebration with stats.
+All screens include 10-second polling, optimistic transitions, and
+error recovery with retry.
+
 ---
 
 ## What the service cannot do yet
 
-**The phonebanker join flow UI.**
-The `/session/{id}` route exists and the server routes are live, but the
-member-search gate, participant registration UI, and join-driven step
-transitions are still placeholders (Segment B1).
-
 **View listing for session setup.**
 `GET /api/views` is still mock-only. The organiser view picker does not
 yet fetch live Airtable views.
-
-**Phonebanker call-loop UI.**
-The `assigned`, `noAnswerFollowUp`, `wantsRemoved`, and `done` screens are
-still placeholders. The contact card, outcome buttons, follow-up screens,
-and "claim next" UI transitions are Segment B2.
-
-**Client-side polling and multi-device sync.**
-The server exposes `GET /api/sessions/:id/state`, but the client does not
-yet run the 10-second polling loop or update the store from state changes.
-
-**Session lifecycle in app.**
-`GET /api/sessions/:id` now reads `status`, but the client does not yet
-route inactive sessions to the `sessionEnded` screen (Segment B1).
 
 **Automated e2e concurrency in CI.**
 The Playwright concurrency spec is present, but it requires
@@ -111,19 +109,14 @@ session. No CI-safe test base is wired yet.
 
 **Phonebanker foundation (Segment 0) — the contract and shell.**
 The nine-route API surface is reconciled to [tech-stack.md](../docs/tech/tech-stack.md);
-all phonebanker schemas exist (`joinSchema`, `sessionStateSchema`, `assignmentSchema`,
-`ClaimResult`, `outcomeSchema`, tightened `SessionStatus`). The `phonebankerStore`
-and `Phonebanker` router shell are in place with seven screen placeholders behind a
-step machine, mounted at `/session/:id`. `npm run lint` is clean. The unused
-`appStore` was removed. Segment A has now replaced the phonebanker route mocks
-with the real server coordinator; B1/B2 should build against those routes.
+all phonebanker schemas exist; the `phonebankerStore` and `Phonebanker` router
+shell are in place; the unused `appStore` was removed. Segments A, B1, and B2
+have replaced all route mocks and screen placeholders with full implementations.
 
 ---
 
 ## What's next
 
-Segment A is complete. The remaining work is **B1 (entry screens)** and
-**B2 (call loop)**, each in a fresh session. Read
-**[segment-0-foundation.md](segment-0-foundation.md)** first — it carries the
-contract, the resolved decisions, the screen→step map, and a per-segment
-kickoff guide.
+Segments A, B1, and B2 are complete. All seven phonebanker screens and
+all server routes are live. The remaining work is an automated e2e CI path
+for the concurrency tests.
