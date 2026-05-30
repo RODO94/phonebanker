@@ -1,92 +1,119 @@
 import { Hono } from 'hono';
+import type { Context } from 'hono';
 import { CreateSessionRequestSchema } from '../../src/session/sessionSchema.js';
+import { MemberSearchRequestSchema, JoinRequestSchema } from '../../src/session/joinSchema.js';
+import { LogRequestSchema, SkipRequestSchema } from '../../src/contact/outcomeSchema.js';
 import { createAirtableSession } from './airtableSession.js';
-import { MOCK_CONTACTS } from '../contact/mockContacts.js';
+import { createAssignmentCoordinator } from './assignmentCoordinator.js';
+import { createAirtableCoordinatorDeps } from './airtableCoordinatorDeps.js';
+import { SessionNotFoundError, ParticipantNotRegisteredError } from './errors.js';
+import { AirtableUnavailableError } from '../airtable/client.js';
+
+// The participant's identity, carried as a request header on every authed call.
+// Lost on refresh by design — rebuilt by re-joining (no cookie, no persistence).
+const PARTICIPANT_HEADER = 'X-Participant-Id';
+
+const coordinator = createAssignmentCoordinator(createAirtableCoordinatorDeps());
 
 export const sessionRoutes = new Hono();
 
+function mapError(c: Context, err: unknown) {
+  if (err instanceof SessionNotFoundError) return c.json({ error: err.message }, 404);
+  if (err instanceof ParticipantNotRegisteredError) return c.json({ error: err.message }, 401);
+  if (err instanceof AirtableUnavailableError) return c.json({ error: 'airtable unavailable' }, 502);
+  const detail = err instanceof Error ? err.message : String(err);
+  return c.json({ error: 'internal error', detail }, 500);
+}
+
+function participantId(c: Context): string {
+  const id = c.req.header(PARTICIPANT_HEADER);
+  if (!id) throw new ParticipantNotRegisteredError('missing participant header');
+  return id;
+}
+
+// POST /api/sessions — create a session (writes the record to Airtable).
 sessionRoutes.post('/', async (c) => {
-  const body = await c.req.json();
-  const parsed = CreateSessionRequestSchema.safeParse(body);
+  const parsed = CreateSessionRequestSchema.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) {
     return c.json({ error: 'invalid session payload', issues: parsed.error.issues }, 400);
   }
-  const { organiserName, viewId, viewName, callScript, smsMessage } = parsed.data;
-
   try {
-    const { id } = await createAirtableSession({
-      organiserName,
-      viewId,
-      viewName,
-      callScript,
-      smsMessage,
-    });
-    return c.json({
-      id,
-      organiserName,
-      viewId,
-      viewName,
-      callScript,
-      smsMessage,
-      status: 'active',
-    });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'unknown error';
-    return c.json({ error: 'failed to create session', detail: message }, 502);
+    const { id } = await createAirtableSession(parsed.data);
+    return c.json({ id, ...parsed.data, status: 'active' });
+  } catch (err) {
+    return mapError(c, err);
   }
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SEGMENT 0 MOCKS — do not ship.
-// These return schema-valid shapes so the phonebanker screens (Segments B1/B2)
-// can build against real HTTP. Segment A replaces every handler below with the
-// real Airtable-backed assignment coordinator. Contract + owners are documented
-// in plans/segment-0-foundation.md and docs/tech/tech-stack.md § Hono route groups.
-// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/sessions/:id — fetch the session (script, message, status gate).
+sessionRoutes.get('/:id', async (c) => {
+  try {
+    return c.json(await coordinator.getSession(c.req.param('id')));
+  } catch (err) {
+    return mapError(c, err);
+  }
+});
 
-// GET /:id → Session (status drives the SessionEnded gate)
-sessionRoutes.get('/:id', (c) =>
-  c.json({
-    id: c.req.param('id'),
-    organiserName: 'Mock Organiser',
-    viewId: 'viwMock',
-    viewName: "Tonight's list",
-    callScript: '# Why we are calling\n\nMock call script for local dev.',
-    smsMessage: "Hi, it's [Name] from London Renters Union — I was calling because…",
-    status: 'active',
-  }),
-);
-
-// POST /:id/members/search → { matches, truncated }
+// POST /api/sessions/:id/members/search — bounded join search (top 5).
 sessionRoutes.post('/:id/members/search', async (c) => {
-  const body = await c.req.json().catch(() => ({}));
-  const query = String(body?.query ?? '').toLowerCase();
-  const matches = MOCK_CONTACTS.filter((m) => m.name.toLowerCase().includes(query))
-    .slice(0, 5)
-    .map((m) => ({ id: m.id, name: m.name }));
-  return c.json({ matches, truncated: false });
+  const parsed = MemberSearchRequestSchema.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) return c.json({ error: 'invalid search payload' }, 400);
+  try {
+    return c.json(await coordinator.searchMembers(c.req.param('id'), parsed.data.query));
+  } catch (err) {
+    return mapError(c, err);
+  }
 });
 
-// POST /:id/join → { participantId, displayName }
+// POST /api/sessions/:id/join — register the chosen member as a participant.
 sessionRoutes.post('/:id/join', async (c) => {
-  const body = await c.req.json().catch(() => ({}));
-  const member = MOCK_CONTACTS.find((m) => m.id === body?.memberId) ?? MOCK_CONTACTS[0];
-  return c.json({ participantId: member.id, displayName: member.name });
+  const parsed = JoinRequestSchema.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) return c.json({ error: 'invalid join payload' }, 400);
+  try {
+    return c.json(await coordinator.joinSession(c.req.param('id'), parsed.data.memberId));
+  } catch (err) {
+    return mapError(c, err);
+  }
 });
 
-// GET /:id/state → polling envelope { progress, claim }
-sessionRoutes.get('/:id/state', (c) =>
-  c.json({
-    progress: { total: MOCK_CONTACTS.length, called: 0 },
-    claim: { kind: 'idle' },
-  }),
-);
+// GET /api/sessions/:id/state — the polling envelope (claim + burn-down).
+sessionRoutes.get('/:id/state', async (c) => {
+  try {
+    return c.json(await coordinator.getState(c.req.param('id'), participantId(c)));
+  } catch (err) {
+    return mapError(c, err);
+  }
+});
 
-// POST /:id/next → ClaimResult
-sessionRoutes.post('/:id/next', (c) => c.json({ kind: 'claimed', contact: MOCK_CONTACTS[0] }));
+// POST /api/sessions/:id/next — claim the next available contact (idempotent).
+sessionRoutes.post('/:id/next', async (c) => {
+  try {
+    return c.json(await coordinator.claimNextUnassignedContact(c.req.param('id'), participantId(c)));
+  } catch (err) {
+    return mapError(c, err);
+  }
+});
 
-// POST /:id/log → { ok: true }
-sessionRoutes.post('/:id/log', (c) => c.json({ ok: true }));
+// POST /api/sessions/:id/log — write a phone log, clear the assignment.
+sessionRoutes.post('/:id/log', async (c) => {
+  const parsed = LogRequestSchema.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) return c.json({ error: 'invalid log payload', issues: parsed.error.issues }, 400);
+  try {
+    await coordinator.recordOutcome(c.req.param('id'), participantId(c), parsed.data);
+    return c.json({ ok: true });
+  } catch (err) {
+    return mapError(c, err);
+  }
+});
 
-// POST /:id/skip → { ok: true }
-sessionRoutes.post('/:id/skip', (c) => c.json({ ok: true }));
+// POST /api/sessions/:id/skip — log a skip, return the contact to the pool.
+sessionRoutes.post('/:id/skip', async (c) => {
+  const parsed = SkipRequestSchema.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) return c.json({ error: 'invalid skip payload' }, 400);
+  try {
+    await coordinator.releaseContact(c.req.param('id'), participantId(c), parsed.data.contactId);
+    return c.json({ ok: true });
+  } catch (err) {
+    return mapError(c, err);
+  }
+});

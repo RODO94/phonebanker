@@ -6,9 +6,12 @@ describe('schemas', () => {
   it('parses a valid session', () => {
     const result = SessionSchema.safeParse({
       id: 's1',
+      organiserName: 'Sam',
+      viewId: 'viwActive',
       viewName: 'Active members',
       callScript: 'Hi...',
       smsMessage: 'Sorry we missed you...',
+      status: 'active',
     });
     expect(result.success).toBe(true);
   });

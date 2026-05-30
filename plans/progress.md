@@ -3,7 +3,7 @@
 A running status check on the Phonebanker service. Updated as features land or
 gaps appear. Two questions only: **what works** and **what doesn't (yet)**.
 
-Last updated: 2026-05-30
+Last updated: 2026-05-30 (Segment A — complete)
 
 ---
 
@@ -32,44 +32,80 @@ Server reads `AIRTABLE_API_KEY` and `AIRTABLE_BASE_ID` from `.env` via
 the native `--env-file` flag. The Sessions table is targeted by ID
 (`tblGtfTz6ybQVm2I0`) so renames don't break the write.
 
+**Phonebanker server truth (Segment A).**
+All seven Segment A routes are live and backed by the real assignment
+coordinator:
+
+- `GET /api/sessions/:id` reads the session from Airtable.
+- `POST /api/sessions/:id/members/search` searches the session's member
+  view with a 6-character minimum, top-5 cap, and diacritic-normalised
+  matching.
+- `POST /api/sessions/:id/join` registers the selected member as the
+  participant and returns their `participantId`.
+- `GET /api/sessions/:id/state` returns the polling envelope: current
+  claim state plus burn-down progress.
+- `POST /api/sessions/:id/next` claims the next available contact,
+  serialised by a per-session `async-mutex` and re-checked against
+  Airtable before writing the lock.
+- `POST /api/sessions/:id/log` writes a phone log, clears the assignment,
+  and marks the contact completed.
+- `POST /api/sessions/:id/skip` writes a skipped log, clears the
+  assignment, and returns the contact to the pool.
+
+`X-Participant-Id` is the final participant identity header for authed
+phonebanker calls. It remains non-persistent by design and is rebuilt by
+re-joining after refresh.
+
+**Assignment coordinator and Airtable adapter.**
+The coordinator is dependency-injected and testable against an in-memory
+fake. The Airtable adapter owns paginated contact reads, session reads,
+assignment lock writes, lock clears, and `Phone Logs` writes. Raw Airtable
+Member records are mapped through `ContactSchema` so field drift fails at
+the boundary.
+
+**Concurrency, idempotency, and timeout behaviour.**
+The claim loop is idempotent per participant, prevents duplicate claims
+under concurrent requests, supports skip/release back to the pool, counts
+terminal outcomes into burn-down, and lazily expires live claims after 30
+minutes without a background timer.
+
+**Tests.**
+`npm run lint` is clean. `npx vitest run --reporter=verbose` passes 10/10
+unit tests, covering concurrent claims, idempotency, list exhaustion,
+skip/release, 30-minute timeout, burn-down, participant gates, search
+bounds, and schema validation. An env-gated Playwright HTTP concurrency
+test exists for a pre-seeded Airtable session.
+
 ---
 
 ## What the service cannot do yet
 
-**The phonebanker join flow.**
-The `/session/{id}` URL does not yet resolve to a usable screen. There is
-no member-search gate, no participant registration, no resolution of
-`participantId = member.recordId`. Route exists; UI does not.
+**The phonebanker join flow UI.**
+The `/session/{id}` route exists and the server routes are live, but the
+member-search gate, participant registration UI, and join-driven step
+transitions are still placeholders (Segment B1).
 
-**Reading from a real Members table.**
-`GET /api/views` is mock-only. There is no `/api/sessions/:id/members` (or
-equivalent) that fetches the Members view referenced by the Session
-record. The phonebanker side has no real data to operate on.
+**View listing for session setup.**
+`GET /api/views` is still mock-only. The organiser view picker does not
+yet fetch live Airtable views.
 
-**Contact assignment and locking.**
-The "claim next unassigned contact" loop is unwritten. `server/session/
-assignment.ts` is a placeholder Map and a timeout constant — no mutex,
-no Airtable read-then-write on the `Assigned phonebanker` field, no
-30-minute timeout queue.
+**Phonebanker call-loop UI.**
+The `assigned`, `noAnswerFollowUp`, `wantsRemoved`, and `done` screens are
+still placeholders. The contact card, outcome buttons, follow-up screens,
+and "claim next" UI transitions are Segment B2.
 
-**Outcome logging.**
-No writes to a `Phone Logs` table. The four route stubs
-(`/:id/join`, `/:id/next`, `/:id/log`, `/:id/skip`) all return 501.
-
-**Cross-tab and multi-device sync.**
-Polling is unimplemented. No participant registry, no in-memory mirror
-of assignments.
+**Client-side polling and multi-device sync.**
+The server exposes `GET /api/sessions/:id/state`, but the client does not
+yet run the 10-second polling loop or update the store from state changes.
 
 **Session lifecycle in app.**
-`status` defaults to `'active'` on create but nothing reads it. There is
-no "this session has ended" page; an expired/ended status will not be
-honoured by the join route until that route exists.
+`GET /api/sessions/:id` now reads `status`, but the client does not yet
+route inactive sessions to the `sessionEnded` screen (Segment B1).
 
-**Tests.**
-No vitest coverage on the session route's Airtable write; no Playwright
-coverage of any concurrent-session scenario (those are mandatory per the
-feature cheatsheet for anything touching assignment, which doesn't exist
-yet to be tested).
+**Automated e2e concurrency in CI.**
+The Playwright concurrency spec is present, but it requires
+`E2E_SESSION_ID` and `E2E_MEMBER_IDS` pointing at a pre-seeded Airtable
+session. No CI-safe test base is wired yet.
 
 ---
 
@@ -78,16 +114,16 @@ The nine-route API surface is reconciled to [tech-stack.md](../docs/tech/tech-st
 all phonebanker schemas exist (`joinSchema`, `sessionStateSchema`, `assignmentSchema`,
 `ClaimResult`, `outcomeSchema`, tightened `SessionStatus`). The `phonebankerStore`
 and `Phonebanker` router shell are in place with seven screen placeholders behind a
-step machine, mounted at `/session/:id`. Server routes return schema-valid mocks so
-the screens can be built against real HTTP. `npm run lint` is clean. The unused
-`appStore` was removed.
+step machine, mounted at `/session/:id`. `npm run lint` is clean. The unused
+`appStore` was removed. Segment A has now replaced the phonebanker route mocks
+with the real server coordinator; B1/B2 should build against those routes.
 
 ---
 
 ## What's next
 
-The work is cut into three segments that build against the Segment 0 contract.
-Read **[segment-0-foundation.md](segment-0-foundation.md)** first — it carries the
-contract, the resolved decisions, the screen→step map, and a per-segment kickoff
-guide. Sequence: **A (server truth) → B1 (entry screens) → B2 (call loop)**, each
-in a fresh session.
+Segment A is complete. The remaining work is **B1 (entry screens)** and
+**B2 (call loop)**, each in a fresh session. Read
+**[segment-0-foundation.md](segment-0-foundation.md)** first — it carries the
+contract, the resolved decisions, the screen→step map, and a per-segment
+kickoff guide.
