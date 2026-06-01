@@ -16,7 +16,7 @@
 # Replace the host below with your Render service URL once it exists.
 [[redirects]]
   from = "/api/*"
-  to = "https://phonebanker-server.onrender.com/api/:splat"
+  to = "https://phonebanker.onrender.com"
   status = 200
   force = true
 
