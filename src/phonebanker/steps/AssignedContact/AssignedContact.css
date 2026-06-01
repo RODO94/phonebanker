@@ -71,26 +71,42 @@
   word-break: break-word;
 }
 
+/* The dial action — the second-largest element on the card. A prominent green
+   filled button with a leading handset icon, so tapping to call is the obvious
+   move (wireframes-contact-card.md § phone is the second largest element). */
 .assigned-contact-phone {
   display: inline-flex;
   align-items: center;
-  min-height: 52px;
-  padding: 14px 24px;
+  justify-content: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 16px 24px;
   font-family: var(--font-interactive);
   font-size: var(--size-interactive);
   line-height: var(--lh-interactive);
   font-weight: var(--weight-interactive);
   letter-spacing: var(--track-interactive);
-  color: var(--color-text-link);
+  color: var(--color-text-on-action);
   text-decoration: none;
-  background: var(--color-surface-raised);
-  border: 2px solid var(--color-border-strong);
+  background: var(--color-action-success);
+  border: 2px solid var(--color-action-success);
   border-radius: 6px;
 
   &:where(:hover, :focus-visible) {
     outline: 2px solid var(--color-border-strong);
     outline-offset: 2px;
   }
+}
+
+.assigned-contact-phone-icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+.assigned-contact-phone-icon svg {
+  display: block;
+  width: 1.25em;
+  height: 1.25em;
 }
 
 /* ----  Meta chips  ---------------------------------------------------- */
@@ -220,17 +236,6 @@
     outline: 2px solid var(--color-border-strong);
     outline-offset: 2px;
   }
-}
-
-/* ----  Progress / burn-down  ------------------------------------------ */
-
-.assigned-contact-progress {
-  font-family: var(--font-caption);
-  font-size: var(--size-caption);
-  line-height: var(--lh-caption);
-  color: var(--color-text-secondary);
-  text-align: center;
-  margin: 0;
 }
 
 /* ----  Outcome actions  ------------------------------------------------ */

@@ -1,0 +1,43 @@
+/* Persistent brand + burn-down bar. Full-bleed across the top of the call-loop
+   screens — the container holds no horizontal gutter so this bar reaches the
+   edges; the screen content below carries its own gutter. */
+.phonebank-header {
+  background: var(--color-black-950);
+}
+
+.phonebank-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+}
+
+.phonebank-header-brand {
+  font-family: var(--font-interactive);
+  font-size: var(--size-interactive);
+  line-height: var(--lh-interactive);
+  font-weight: var(--weight-interactive);
+  letter-spacing: var(--track-interactive);
+  color: var(--color-text-on-action);
+}
+
+.phonebank-header-count {
+  font-family: var(--font-caption);
+  font-size: var(--size-caption);
+  line-height: var(--lh-caption);
+  color: var(--color-text-on-action);
+  white-space: nowrap;
+}
+
+.phonebank-header-progress {
+  height: 4px;
+  background: var(--color-grey-800);
+  overflow: hidden;
+}
+
+.phonebank-header-progress-fill {
+  height: 100%;
+  background: var(--color-action-success);
+  transition: width 200ms ease-out;
+}

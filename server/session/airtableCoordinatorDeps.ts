@@ -9,6 +9,7 @@ import {
   CHOICE_TO_OUTCOME,
 } from '../airtable/schema.js';
 import { memberBatchFilter } from '../batches/batchMembers.js';
+import { CONTACT_FIELDS } from '../../src/contact/contactFields.js';
 import { SessionNotFoundError } from './errors.js';
 import { toContact } from '../contact/contactMapper.js';
 import { SessionStatusSchema } from '../../src/session/sessionSchema.js';
@@ -52,23 +53,42 @@ export function createAirtableCoordinatorDeps(): CoordinatorDeps {
       };
     },
 
+    async listAllMembers() {
+      const query = new URLSearchParams({ pageSize: '100' });
+      query.append('fields[]', CONTACT_FIELDS.name);
+      const records = await fetchAllPages(`/${TABLES.members}`, query);
+      return records.map((rec) => ({
+        id: rec.id,
+        name: String(rec.fields[CONTACT_FIELDS.name] ?? ''),
+      }));
+    },
+
     async listBatchContacts(batch) {
-      try {
-        const query = new URLSearchParams({
-          filterByFormula: memberBatchFilter(batch),
-          pageSize: '100',
-        });
-
-        const records = await fetchAllPages(`/${TABLES.members}`, query);
-
-        return records.map((rec) => ({
-          contact: toContact(rec.id, rec.fields),
-          assignment: toMirror(rec.fields),
-        }));
-      } catch (err) {
-        console.error('error listing batch contacts', err);
-        throw err;
+      const query = new URLSearchParams({
+        filterByFormula: memberBatchFilter(batch),
+        pageSize: '100',
+      });
+      // Minimum exposure: fetch only the card fields plus the assignment lock,
+      // so the onboarding flags, membership number and notes on the Member
+      // record never leave Airtable. filterByFormula still evaluates the batch
+      // tag server-side regardless of this projection.
+      for (const field of [
+        CONTACT_FIELDS.name,
+        CONTACT_FIELDS.phoneNumber,
+        CONTACT_FIELDS.contactType,
+        CONTACT_FIELDS.summary,
+        MEMBER_ASSIGNMENT_FIELDS.assignedPhonebanker,
+        MEMBER_ASSIGNMENT_FIELDS.claimedAt,
+      ]) {
+        query.append('fields[]', field);
       }
+
+      const records = await fetchAllPages(`/${TABLES.members}`, query);
+
+      return records.map((rec) => ({
+        contact: toContact(rec.id, rec.fields),
+        assignment: toMirror(rec.fields),
+      }));
     },
 
     async readContactAssignment(contactId) {
@@ -111,7 +131,6 @@ export function createAirtableCoordinatorDeps(): CoordinatorDeps {
             [PHONE_LOG_FIELDS.outcome]: OUTCOME_CHOICES[outcome],
             [PHONE_LOG_FIELDS.messageSent]: Boolean(messageSent),
             [PHONE_LOG_FIELDS.timestamp]: new Date().toISOString(),
-            [PHONE_LOG_FIELDS.sessionId]: sessionId,
           },
         }),
       });
@@ -119,7 +138,7 @@ export function createAirtableCoordinatorDeps(): CoordinatorDeps {
 
     async listLoggedContacts(sessionId) {
       const query = new URLSearchParams({
-        filterByFormula: `{${PHONE_LOG_FIELDS.sessionId}}='${sessionId}'`,
+        filterByFormula: `FIND('${sessionId}', ARRAYJOIN({${PHONE_LOG_FIELDS.session}}))`,
         pageSize: '100',
       });
       const records = await fetchAllPages(`/${TABLES.phoneLogs}`, query);

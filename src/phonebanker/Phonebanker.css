@@ -1,6 +1,29 @@
 /* Scaffold container only. Real layout + spacing tokens are a screen-segment
-   concern — each screen owns its co-located CSS. */
+   concern — each screen owns its co-located CSS.
+
+   Mobile-first (tech-stack.md § Mobile-first): the base is the phone layout — a
+   full-width column. The 32rem cap is a desktop adjustment layered on at the
+   breakpoint, mirroring the landing route's structure. The container holds no
+   horizontal gutter so the brand header can run full-bleed; the page gutter
+   lives on the inner screen wrapper instead. */
 .phonebanker {
-  max-width: 32rem;
-  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 480px) {
+  .phonebanker {
+    max-width: 32rem;
+    margin: 0 auto;
+  }
+}
+
+.phonebanker-screen {
+  padding: 24px 16px;
+}
+
+@media (min-width: 480px) {
+  .phonebanker-screen {
+    padding: 32px 16px;
+  }
 }

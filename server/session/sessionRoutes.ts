@@ -6,6 +6,7 @@ import { LogRequestSchema, SkipRequestSchema } from '../../src/contact/outcomeSc
 import { createAirtableSession } from './airtableSession.js';
 import { createAssignmentCoordinator } from './assignmentCoordinator.js';
 import { createAirtableCoordinatorDeps } from './airtableCoordinatorDeps.js';
+import { createRateLimiter } from './rateLimit.js';
 import { SessionNotFoundError, ParticipantNotRegisteredError } from './errors.js';
 import { AirtableUnavailableError } from '../airtable/client.js';
 
@@ -14,6 +15,19 @@ import { AirtableUnavailableError } from '../airtable/client.js';
 const PARTICIPANT_HEADER = 'X-Participant-Id';
 
 const coordinator = createAssignmentCoordinator(createAirtableCoordinatorDeps());
+
+// "Next contact" is capped per participant at 1 request / 5s — the scraping
+// mitigation in security-and-trust.md. The one-call-at-a-time UI never needs to
+// go faster, so a legitimate volunteer never trips it.
+const nextLimiter = createRateLimiter(1, 5_000);
+
+// The join search runs pre-join (no participant yet), so it can only be keyed by
+// session. The cap is deliberately generous — a backstop against a runaway
+// scraping script (and the Airtable load it would cause), set well above what a
+// roomful of volunteers typing their names concurrently would reach, so it does
+// not erode the "ease of joining" value. Per security-and-trust.md, slowing
+// enumeration — not preventing it — is the accepted posture.
+const searchLimiter = createRateLimiter(60, 10_000);
 
 export const sessionRoutes = new Hono();
 
@@ -58,6 +72,9 @@ sessionRoutes.get('/:id', async (c) => {
 sessionRoutes.post('/:id/members/search', async (c) => {
   const parsed = MemberSearchRequestSchema.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return c.json({ error: 'invalid search payload' }, 400);
+  if (!searchLimiter.tryConsume(c.req.param('id'))) {
+    return c.json({ error: 'too many requests' }, 429);
+  }
   try {
     return c.json(await coordinator.searchMembers(c.req.param('id'), parsed.data.query));
   } catch (err) {
@@ -88,7 +105,11 @@ sessionRoutes.get('/:id/state', async (c) => {
 // POST /api/sessions/:id/next — claim the next available contact (idempotent).
 sessionRoutes.post('/:id/next', async (c) => {
   try {
-    return c.json(await coordinator.claimNextUnassignedContact(c.req.param('id'), participantId(c)));
+    const pid = participantId(c);
+    if (!nextLimiter.tryConsume(pid)) {
+      return c.json({ error: 'too many requests' }, 429);
+    }
+    return c.json(await coordinator.claimNextUnassignedContact(c.req.param('id'), pid));
   } catch (err) {
     return mapError(c, err);
   }

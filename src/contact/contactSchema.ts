@@ -1,5 +1,9 @@
 import { z } from 'zod';
 
+// Minimum exposure: the Contact is exactly what the contact card renders, no
+// more. The full Member record carries onboarding flags, membership number and
+// free-text notes that the GDPR posture keeps server-side — they are projected
+// out before they ever cross the proxy (see listBatchContacts' fields[] query).
 export const ContactSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -15,19 +19,7 @@ export const ContactSchema = z.object({
     ])
     .optional(),
 
-  tags: z.array(z.string()).optional(),
-  phoneCallAvailability: z.array(z.string()).optional(),
-
-  newMemberCallDone: z.boolean().optional(),
-  hadInitialOneToOne: z.boolean().optional(),
-  invitedToWhatsApp: z.boolean().optional(),
-
-  membershipNumber: z.number().optional(),
-
-  notes: z.string().optional(),
   summary: z.string().optional(),
-
-  dateEnteredInDatabase: z.string().optional(),
 });
 export type Contact = z.infer<typeof ContactSchema>;
 

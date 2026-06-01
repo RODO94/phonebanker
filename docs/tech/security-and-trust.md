@@ -7,7 +7,9 @@ The model rests on two gates working together:
 1. The **join link** is shared only with confirmed volunteers; its confidentiality bounds who reaches the next gate.
 2. The **member-record lookup** at join — a bounded search returning at most 5 names after a 6-character query — confirms the volunteer is on the union's member list before they can claim a contact.
 
-Neither gate is hardened on its own. Together they are sufficient for the user base. If the join link leaks, the member search becomes the only barrier, and a sufficiently patient attacker can walk small slices of the directory — see the threat model below.
+The search pool for this second gate is the **entire membership**, not the session's call batch. This is deliberate: the gate confirms union membership, not inclusion in tonight's batch, so a volunteer who is not being called can still join and phonebank. The batch only ever scopes which contacts can be *claimed* — never who can *join*.
+
+Neither gate is hardened on its own. Together they are sufficient for the user base. If the join link leaks, the member search becomes the only barrier, and a sufficiently patient attacker can walk small slices of the membership — see the threat model below.
 
 ---
 
@@ -17,8 +19,8 @@ Neither gate is hardened on its own. Together they are sufficient for the user b
 |---------|---------------|-----------|
 | Link forwarded inside the volunteer pool | Expected and fine | Nothing |
 | Link forwarded outside the pool (curious ex-member, casual snoop) | Low | Link expires; can be regenerated; non-members cannot pass the member-search gate |
-| Hostile actor systematically scraping member data via the link | Low but possible | Audit trail in Airtable; one-record-at-a-time UI; rate-limited "next contact"; member search is 6-char minimum, 2s debounce, top-5 only, no pagination |
-| Hostile actor walking the directory by varying search queries | Low but possible | 6-character minimum and 2-second debounce make scripted enumeration operationally slow; top-5 truncation prevents bulk discovery; accepted as a known limit of the trust model |
+| Hostile actor systematically scraping member data via the link | Low but possible | Audit trail in Airtable; one-record-at-a-time UI; rate-limited "next contact"; member search is 6-char minimum, 2s debounce, top-5 only, no pagination. Note the search ranges over the whole membership, so the scrapable surface is the full member list, not one batch — the bounds below are what hold it in check. |
+| Hostile actor walking the membership by varying search queries | Low but possible | The searchable pool is the entire membership (the join gate is union-wide by design). 6-character minimum and 2-second debounce make scripted enumeration operationally slow; top-5 truncation prevents bulk discovery; accepted as a known limit of the trust model. The wider pool raises the ceiling on what a patient attacker could eventually surface, but not the per-query yield. |
 | Impersonation by guessing another member's name | Possible | Accepted — the union trust model treats this as a social, not technical, problem. The audit trail records the recordId of whoever was selected at join. |
 | Volunteer device compromised mid-session | Low | No persistent auth; nothing stored locally |
 | Airtable base compromised | Out of scope for the app | Airtable's own controls |
@@ -50,7 +52,11 @@ We do **not** log "viewed but did not call" events — a phonebanker who joins, 
 
 ## Rate limiting
 
-The "next contact" action is rate-limited per participant (proposed: 1 request per 5 seconds, TBC during build). The member search at join is rate-limited by its UX constraints — 6-character minimum and 2-second debounce — and may add an explicit server-side limit per join link if scripted abuse is observed.
+The "next contact" action is rate-limited per participant at **1 request per 5 seconds**, enforced server-side by an in-process token bucket keyed on the participant recordId (`server/session/rateLimit.ts`, applied in `sessionRoutes.ts`). The one-call-at-a-time UI never needs to go faster, so a legitimate volunteer never trips it; an over-limit request returns `429`.
+
+The member search at join is rate-limited first by its UX constraints — 6-character minimum and 2-second debounce — and also carries an explicit server-side backstop. Because search runs before join (there is no participant yet), the backstop can only be keyed on the **session**, so it is a collective bucket set deliberately high (60 requests / 10 seconds): well above what a roomful of volunteers typing their names concurrently would reach, but low enough to stop a runaway scraping script and the Airtable load it would cause. Consistent with the threat model, this slows enumeration rather than preventing it.
+
+The buckets live in process memory and reset on restart — acceptable for a rate limit, and consistent with the coordinator's in-memory model.
 
 ## Member identity and multi-device
 

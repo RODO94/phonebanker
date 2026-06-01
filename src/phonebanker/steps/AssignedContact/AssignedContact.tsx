@@ -3,6 +3,7 @@ import { marked } from 'marked';
 import { usePhonebankerStore } from '../../phonebankerStore';
 import { apiFetch } from '@/shared/api/apiFetch';
 import { Button } from '@/shared/Button/Button';
+import { CheckIcon, CrossIcon, NoEntryIcon, PhoneIcon } from './OutcomeIcons';
 import { OkResponseSchema } from '@/contact/outcomeSchema';
 import { ClaimResultSchema } from '@/contact/contactSchema';
 import { SessionStateResponseSchema } from '@/session/sessionStateSchema';
@@ -18,8 +19,6 @@ export function AssignedContact() {
   const participantId = usePhonebankerStore((s) => s.participantId);
   const currentContact = usePhonebankerStore((s) => s.currentContact);
   const session = usePhonebankerStore((s) => s.session);
-  const total = usePhonebankerStore((s) => s.total);
-  const called = usePhonebankerStore((s) => s.called);
   const setStep = usePhonebankerStore((s) => s.setStep);
   const setCurrentContact = usePhonebankerStore((s) => s.setCurrentContact);
   const setProgress = usePhonebankerStore((s) => s.setProgress);
@@ -201,6 +200,9 @@ export function AssignedContact() {
           className="assigned-contact-phone"
           href={`tel:${currentContact.phoneNumber}`}
         >
+          <span className="assigned-contact-phone-icon" aria-hidden="true">
+            <PhoneIcon />
+          </span>
           {currentContact.phoneNumber}
         </a>
       </header>
@@ -211,11 +213,7 @@ export function AssignedContact() {
             {currentContact.contactType}
           </span>
         )}
-        {currentContact.tags?.map((tag) => (
-          <span key={tag} className="assigned-contact-meta-chip">
-            {tag}
-          </span>
-        ))}
+  
       </div>
 
       {currentContact.summary && (
@@ -225,7 +223,7 @@ export function AssignedContact() {
           >
             {currentContact.summary}
           </p>
-          {currentContact.summary.length > 200 && (
+          {currentContact.summary.length > 120 && (
             <button
               className="assigned-contact-summary-toggle"
               type="button"
@@ -253,13 +251,10 @@ export function AssignedContact() {
         {copied ? 'Copied!' : 'Copy SMS / voicemail'}
       </button>
 
-      <p className="assigned-contact-progress">
-        {called} of {total} called
-      </p>
-
       <div className="assigned-contact-actions">
         <Button
-          variant="primary"
+          variant="positive"
+          icon={<CheckIcon />}
           fullWidth
           onClick={handleHadConversation}
           disabled={transition.kind !== 'idle'}
@@ -267,7 +262,8 @@ export function AssignedContact() {
           Had a conversation
         </Button>
         <Button
-          variant="secondary"
+          variant="neutral"
+          icon={<CrossIcon />}
           fullWidth
           onClick={handleNoAnswer}
           disabled={transition.kind !== 'idle'}
@@ -275,7 +271,8 @@ export function AssignedContact() {
           No answer
         </Button>
         <Button
-          variant="secondary"
+          variant="caution"
+          icon={<NoEntryIcon />}
           fullWidth
           onClick={handleWantsRemoved}
           disabled={transition.kind !== 'idle'}

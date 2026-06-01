@@ -24,6 +24,8 @@
   --color-red-500:   #F53754;
   --color-red-700:   #B82738;
   --color-green-500: #1E9F50;
+  --color-green-700: #17813F;
+  --color-grey-800:  #3D474C;
   --color-blue-500:  #1D70B8;
   --color-cream-100: #FFFBF0;
 
@@ -49,4 +51,15 @@
   --color-action-primary:        var(--color-red-500);
   --color-action-primary-shade:  var(--color-red-700);
   --color-action-success:        var(--color-green-500);
+
+  /* Outcome actions — severity-coded call results. Each is a filled button
+     with a darker `-shade` for the pressed-edge shadow. positive/caution
+     share their primitive with success/primary today; kept as distinct roles
+     so the outcome set can be re-aliased without touching brand actions. */
+  --color-action-positive:       var(--color-green-500);
+  --color-action-positive-shade: var(--color-green-700);
+  --color-action-neutral:        var(--color-grey-700);
+  --color-action-neutral-shade:  var(--color-grey-800);
+  --color-action-caution:        var(--color-red-500);
+  --color-action-caution-shade:  var(--color-red-700);
 }

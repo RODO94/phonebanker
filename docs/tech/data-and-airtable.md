@@ -9,17 +9,33 @@ A test Airtable base will be used during development that mirrors the production
 ## Tables
 
 ### Members
-The existing member list. The organiser selects a View from this table for each session.
+The existing member list. Field names below are the **literal field names in the
+live base**, not friendly labels — the server addresses them by exact string
+(`src/contact/contactFields.ts`, `server/airtable/schema.ts`).
+
+The table carries more columns than the app touches. Only the fields the server
+reads or writes are listed first; the member-management fields it deliberately
+ignores are recorded separately below.
+
+**Fields the app reads or writes:**
 
 | Field | Type | Notes |
 |-------|------|-------|
 | Name | Text | Full name. Also used by the bounded member search at join (case-insensitive, diacritic-stripped match). |
 | Phone number | Phone | Used by phonebanker to dial |
-| Tenancy type | Single select | e.g. private renter, social housing |
-| Contact type | Single select | Membership type |
-| Last call summary | Long text | Summary from most recent phone log; read-only in app |
-| Assigned phonebanker | Link to Members | The Member record of the volunteer currently assigned to this contact (recordId). Written inside a mutex-guarded read-then-write at claim; cleared on outcome log, skip, or 30-minute timeout. |
-| Claimed at | DateTime | Timestamp written alongside `Assigned phonebanker` at claim time. Used to rebuild the 30-minute timeout queue after a server restart — makes the timeout durable across redeploys. Cleared together with `Assigned phonebanker`. |
+| Contact type | Single select | Membership type, e.g. `Member (paying)`, `Cancelled direct debit`, `Contact`. Rendered as the card's metadata chip. |
+| Summary of calls/meeting notes | Long text | Last-call summary shown on the card; read-only in app. |
+| Current Phonebank Batch | Text | The organiser-typed batch tag (e.g. `31-05-2026`). A Member is in tonight's call list when this exactly matches the session's `phonebankBatch`. Replaces the old Airtable-view selection — views can't be queried outside Airtable Enterprise. |
+| Assigned phone banker (group/branch) | Text (recordId) | **Plain text**, not a Link — holds the recordId of the volunteer currently assigned to this contact; empty when unclaimed. Written inside a mutex-guarded read-then-write at claim; cleared on outcome log, skip, or 30-minute timeout. The lock is transient by design; the durable audit link lives on Phone Logs (`Phonebanker`). |
+| phoned_at | DateTime | Timestamp written alongside the assignment at claim time. Read back on hydration to rebuild the 30-minute timeout — makes expiry durable across redeploys. Cleared together with the assignment. |
+
+**Member-management fields the app does not read** (carried by the base for the
+organisation's own use; deliberately *not* mapped into `Contact`, to keep the
+client payload to the minimum-exposure card set — see GDPR below):
+
+`Tags (group/branch)`, `Phone call availability`, `# membership number`,
+`New member call done?`, `Had initial 1:1?`, `Invited to WhatsApp?`,
+`Notes (group/branch)`, `Date entered in database`.
 
 ### Sessions
 One record per phonebanking session.
@@ -30,7 +46,7 @@ One record per phonebanking session.
 | Date | Date | When the session was created |
 | Call script | Long text | Formatted text shown to phonebankers during calls |
 | SMS/voicemail message | Long text | Conversational message for copy-paste |
-| Airtable view | Text | The name of the Airtable view used as the contact list for this session |
+| phonebankBatch | Text | The batch tag for this session. Matched against each Member's `Current Phonebank Batch` to build tonight's call list. Replaces the old Airtable-view selection — views can't be queried outside Airtable Enterprise. |
 | Created by | Text | Organiser's name |
 
 ### Phone Logs
@@ -68,7 +84,8 @@ The assignment coordinator in the Hono server holds a `Map<sessionId, SessionSta
 |-------|---------|
 | Per-session async mutex | Serialises assignment operations for that session (provided by `async-mutex`) |
 | Participant registry | The set of Member recordIds currently joined to the session. Identity is the recordId — no device tokens, no name-token reconciliation. |
-| Member directory cache | The session's Airtable view, loaded lazily on first member-search request and held for the session lifetime |
+| Member directory cache | Every Member in the base (id → name), loaded lazily on first touch and held for the session lifetime. Backs both member search and join — the join gate is membership-wide, not batch-scoped. See [security-and-trust.md](security-and-trust.md). |
+| Batch contact cache | The contacts in this session's call batch (id → Contact). The pool from which contacts are claimed and against which burn-down is counted — distinct from the membership-wide directory above. |
 | In-memory mirror | The coordinator's view of `assigned_phonebanker` / `claimed_at` per contact, used to serve polling reads. Writes always validate against Airtable inside the mutex; the mirror is updated after the Airtable write succeeds. |
 
 State is **never evicted** during the lifetime of the Hono process — process restart (deploy, crash, reboot) is the eviction mechanism. Memory cost is bounded (kilobytes per session, weekly sessions), and there are no cascading-state risks across sessions because the map is keyed by sessionId.
@@ -80,7 +97,7 @@ Restart recovery is automatic: any method that takes a sessionId lazily rehydrat
 ## Data flow
 
 ```
-Airtable Members (View) ──read──►  App (session setup: organiser selects View)
+Airtable Members (batch tag) ─read─►  App (session setup: organiser types batch tag)
                                              │
                                   Phonebanker runs member search → picks themselves
                                              │
@@ -108,7 +125,7 @@ Airtable Members (View) ──read──►  App (session setup: organiser selec
 
 ## Concurrent sessions on the same base
 
-The assignment lock lives on the Member record, not on a session-contact pair. A contact appearing in two simultaneous sessions' views can only be locked by one of them at a time. **If two sessions run concurrently against the same Airtable base, their views must not overlap** — otherwise volunteers in session A and session B will compete for the same contact and one will appear locked when the other hasn't claimed it.
+The assignment lock lives on the Member record, not on a session-contact pair. A contact appearing in two simultaneous sessions' batches can only be locked by one of them at a time. **If two sessions run concurrently against the same Airtable base, their batches must not overlap** — otherwise volunteers in session A and session B will compete for the same contact and one will appear locked when the other hasn't claimed it.
 
 The strategy assumes one session per base per night and this constraint isn't load-bearing. If concurrent sessions become a real requirement, the lock granularity needs to move from the Member record to a session-scoped record (a new `Session Assignments` table linking session × contact × phonebanker). Out of scope for MVP — recorded here as the future force.
 
@@ -116,7 +133,7 @@ The strategy assumes one session per base per night and this constraint isn't lo
 
 ## GDPR considerations
 
-- **Minimum exposure**: phonebankers see one contact record at a time; no list view, no bulk search. The member search at join is bounded — 6-character minimum, up to 5 matches, no pagination — by GDPR design.
+- **Minimum exposure**: phonebankers see one contact record at a time; no list view, no bulk search. The member search at join ranges over the whole membership (it confirms union membership, not batch inclusion) but is bounded — 6-character minimum, up to 5 matches, no pagination — by GDPR design, so it returns identity confirmation rather than a browsable directory.
 - **No export**: the app provides no download, CSV, or print functionality
 - **No persistent auth**: phonebankers identify via member-record lookup at join — no account is created or stored locally
 - **Retention**: the app does not store member data locally; it is fetched from Airtable per request and cached in-process for the session's lifetime only

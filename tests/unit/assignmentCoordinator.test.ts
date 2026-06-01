@@ -12,15 +12,27 @@ import type { Outcome } from '@/contact/outcomeSchema';
 // delay so that, without the per-session mutex, concurrent claims would race the
 // read-then-write — which is exactly the failure the coordinator must prevent.
 //
-// Per the data model, the member directory *is* the session's view: volunteers
-// identify themselves from the same pool they call into (hence the "this is me"
-// skip). So a participantId is always one of the contact ids below.
+// The all-members pool (search + join) is deliberately wider than the call batch:
+// a volunteer need not be in tonight's batch to phonebank. So the batch contacts
+// below are every member who is also callable, plus a couple of extra members who
+// can join and search but are not in the claim pool.
 function createFakeAirtable(contactCount: number, ioDelayMs = 1) {
   const contacts: Contact[] = Array.from({ length: contactCount }, (_, i) => ({
     id: `rec${i + 1}`,
     name: `Member ${String(i + 1).padStart(2, '0')}`,
     phoneNumber: `07700 9000${String(i + 1).padStart(2, '0')}`,
   }));
+
+  // Members beyond the batch: they can identify themselves and join, but never
+  // appear as a claimable contact.
+  const nonBatchMembers = [
+    { id: 'recVolA', name: 'Volunteer Alpha' },
+    { id: 'recVolB', name: 'Volunteer Bravo' },
+  ];
+  const allMembers = [
+    ...contacts.map((c) => ({ id: c.id, name: c.name })),
+    ...nonBatchMembers,
+  ];
 
   const locks = new Map<string, AssignmentMirror>(
     contacts.map((c) => [c.id, { assignedPhonebanker: null, claimedAt: null }]),
@@ -41,6 +53,10 @@ function createFakeAirtable(contactCount: number, ioDelayMs = 1) {
         smsMessage: '',
         status: 'active',
       };
+    },
+    async listAllMembers() {
+      await io();
+      return allMembers.map((m) => ({ ...m }));
     },
     async listBatchContacts() {
       await io();

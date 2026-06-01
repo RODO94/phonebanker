@@ -29,6 +29,27 @@
     border: 2px solid var(--color-border-strong);
   }
 
+  &.positive {
+    color: var(--color-text-on-action);
+    background: var(--color-action-positive);
+    border-color: var(--color-action-positive);
+    box-shadow: 0 2px 0 0 var(--color-action-positive-shade);
+  }
+
+  &.neutral {
+    color: var(--color-text-on-action);
+    background: var(--color-action-neutral);
+    border-color: var(--color-action-neutral);
+    box-shadow: 0 2px 0 0 var(--color-action-neutral-shade);
+  }
+
+  &.caution {
+    color: var(--color-text-on-action);
+    background: var(--color-action-caution);
+    border-color: var(--color-action-caution);
+    box-shadow: 0 2px 0 0 var(--color-action-caution-shade);
+  }
+
   &.ghost {
     color: var(--color-text-primary);
     background: transparent;
@@ -49,6 +70,18 @@
 
   &.full-width {
     width: 100%;
+  }
+
+  & .button-icon {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 8px;
+  }
+
+  & .button-icon svg {
+    display: block;
+    width: 1.25em;
+    height: 1.25em;
   }
 
   &:where(:hover, :focus-visible) {

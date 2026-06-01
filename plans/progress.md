@@ -3,24 +3,25 @@
 A running status check on the Phonebanker service. Updated as features land or
 gaps appear. Two questions only: **what works** and **what doesn't (yet)**.
 
-Last updated: 2026-05-30 (Segments A, B1, B2 — complete)
+Last updated: 2026-06-01 (conformance follow-up — C1, M1, M6, N1–N3 landed)
 
 ---
 
 ## What the service can do now
 
 **Organiser session setup (end-to-end, writes to Airtable).**
-The organiser identifies themselves, picks an Airtable view of Members,
-writes the call script in markdown, writes the SMS/voicemail message with
+The organiser identifies themselves, enters the batch tag for tonight's call
+list, writes the call script in markdown, writes the SMS/voicemail message with
 template variable insertion, reviews the whole session, and submits. A real
 record is created in the Airtable `Phonebank Sessions` table with
-`Created by`, `viewId`, `viewName`, `callScript`, `smsMessage`, and
+`Created by`, `phonebankBatch`, `callScript`, `smsMessage`, and
 `status='active'`. The organiser receives a shareable join URL of the form
 `/session/{airtableRecordId}`.
 
-**View listing for session setup.**
-`GET /api/views` returns a mocked list of Airtable views the organiser
-selects from. Mock data only — not yet fetched from the live base.
+**Batch validation for session setup.**
+`POST /api/batches/count` returns how many Members carry a typed batch tag,
+backed by the live base. The organiser confirms a non-zero count before
+creating the session — zero means a typo or an untagged batch.
 
 **Design system foundation.**
 Typography + colour tokens established; `Button`, `Textarea`, and the
@@ -37,8 +38,8 @@ All seven Segment A routes are live and backed by the real assignment
 coordinator:
 
 - `GET /api/sessions/:id` reads the session from Airtable.
-- `POST /api/sessions/:id/members/search` searches the session's member
-  view with a 6-character minimum, top-5 cap, and diacritic-normalised
+- `POST /api/sessions/:id/members/search` searches the whole membership
+  with a 6-character minimum, top-5 cap, and diacritic-normalised
   matching.
 - `POST /api/sessions/:id/join` registers the selected member as the
   participant and returns their `participantId`.
@@ -70,11 +71,12 @@ terminal outcomes into burn-down, and lazily expires live claims after 30
 minutes without a background timer.
 
 **Tests.**
-`npm run lint` is clean. `npx vitest run --reporter=verbose` passes 10/10
-unit tests, covering concurrent claims, idempotency, list exhaustion,
+The Vitest suite covers concurrent claims, idempotency, list exhaustion,
 skip/release, 30-minute timeout, burn-down, participant gates, search
 bounds, and schema validation. An env-gated Playwright HTTP concurrency
-test exists for a pre-seeded Airtable session.
+test exists for a pre-seeded Airtable session. As of the 2026-06-01 follow-up the
+suite is green again — `npm run lint`, `tsc`, and all 10 Vitest cases pass — so
+the double-call proof is re-armed (C1 resolved).
 
 **Phonebanker entry screens (Segment B1).**
 The Join screen implements debounced member search (6-char floor, top-5
@@ -96,14 +98,52 @@ error recovery with retry.
 
 ## What the service cannot do yet
 
-**View listing for session setup.**
-`GET /api/views` is still mock-only. The organiser view picker does not
-yet fetch live Airtable views.
-
 **Automated e2e concurrency in CI.**
 The Playwright concurrency spec is present, but it requires
 `E2E_SESSION_ID` and `E2E_MEMBER_IDS` pointing at a pre-seeded Airtable
 session. No CI-safe test base is wired yet.
+
+---
+
+## Known shortcomings (to pick up separately)
+
+Logged from the 2026-06-01 conformance review — full detail, doc/code refs,
+and severity triage live in [conformance-review.md](conformance-review.md).
+Listed worst-first.
+
+**Resolved in the 2026-06-01 follow-up**
+- ✅ **Build green again** — the test fake gained `listAllMembers`; lint, `tsc`,
+  and 10/10 Vitest pass, re-arming the double-call proof. (C1)
+- ✅ **Search scope documented** — membership-wide search confirmed intended; the
+  security and data docs now describe the join gate as union-wide, not batch-scoped,
+  with the enumeration threat row reconciled to the larger pool. (M1)
+- ✅ **Outcome-button semantics** — added positive/neutral/caution Button variants
+  bound to green/slate/red tokens, each with an icon; the card now matches the
+  Figma severity coding and honours "no colour-only meaning". (M6)
+- ✅ **Docs re-baselined onto batches** — views→batches terminology swept from the
+  tech docs and this file; route table lists `POST /api/batches/count`; stale
+  `sessionId` comment in `schema.ts` corrected. (N1–N3)
+
+**Still open — Major**
+- **Contact payload over-exposes PII**: the full Member record (~12 fields incl.
+  free-text notes, membership number) is shipped to the browser though the card
+  renders four. Project `fields[]` to the documented set. (M2)
+- **Members data model doc has drifted** from the live base (the data-and-airtable
+  table has since been rewritten to match; verify it's complete). (M3)
+- **Debug logging of PII** — `console.log` of member-name search fragments left
+  in the coordinator. Remove. (M4)
+- **Phonebanker flow is not mobile-first** — zero `@media` in the app; container
+  is a desktop `max-width` cap with no gutter (card runs edge-to-edge at 401px).
+  Establish the mobile base; reframe the cap as the desktop adjustment. (M5)
+
+**Still open — Minor / doc-stale**
+- Contact-card visual gaps vs. the hi-fi Figma (header, phone treatment, script
+  container); `/next` rate limiting unimplemented. (N4–N5)
+
+**Build-time reference question.** The contact card has drifted from the Figma on
+most axes, suggesting it was built from the wireframe + data model and never
+reconciled to the hi-fi design. Decide which artifact is authoritative before
+fixing the visual items one by one.
 
 ---
 
@@ -117,6 +157,10 @@ have replaced all route mocks and screen placeholders with full implementations.
 
 ## What's next
 
-Segments A, B1, and B2 are complete. All seven phonebanker screens and
-all server routes are live. The remaining work is an automated e2e CI path
-for the concurrency tests.
+Segments A, B1, and B2 are functionally in place. The 2026-06-01 conformance
+review surfaced shortcomings that come before new feature work; C1, M1, M6, and
+N1–N3 have since landed (see above and [conformance-review.md](conformance-review.md)).
+Remaining order: the two live privacy fixes (M2, M4) → verify the M3 data-model
+doc rewrite is complete → mobile-first pass (M5) → contact-card visual fidelity
+and `/next` rate limiting (N4, N5). Automated e2e CI for the concurrency tests
+remains after that.

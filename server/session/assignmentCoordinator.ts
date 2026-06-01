@@ -25,6 +25,7 @@ export type LoggedContact = { contactId: string; outcome: Outcome };
 export type CoordinatorDeps = {
   now: () => number;
   readSession: (sessionId: string) => Promise<Session>;
+  listAllMembers: () => Promise<Array<{ id: string; name: string }>>;
   listBatchContacts: (
     batch: string,
   ) => Promise<Array<{ contact: Contact; assignment: AssignmentMirror }>>;
@@ -51,7 +52,8 @@ type SessionState = {
   session: Session;
   mutex: Mutex;
   participants: Set<string>; // joined member recordIds
-  directory: Map<string, Contact>; // contactId → contact, in view order
+  memberDirectory: Map<string, string>; // memberId → name, all members (for search + join)
+  directory: Map<string, Contact>; // contactId → contact, batch only (for claims)
   mirror: Map<string, AssignmentMirror>; // contactId → current lock
   completed: Set<string>; // contactIds with a terminal (non-skip) log
 };
@@ -75,9 +77,14 @@ export function createAssignmentCoordinator(deps: CoordinatorDeps) {
   const hydrating = new Map<string, Promise<SessionState>>();
 
   async function buildState(sessionId: string): Promise<SessionState> {
-
     const session = await deps.readSession(sessionId); // throws SessionNotFoundError
-    const contacts = await deps.listBatchContacts(session.phonebankBatch);
+    const [allMembers, contacts, loggedContacts] = await Promise.all([
+      deps.listAllMembers(),
+      deps.listBatchContacts(session.phonebankBatch),
+      deps.listLoggedContacts(sessionId),
+    ]);
+    const memberDirectory = new Map<string, string>();
+    for (const { id, name } of allMembers) memberDirectory.set(id, name);
     const directory = new Map<string, Contact>();
     const mirror = new Map<string, AssignmentMirror>();
     for (const { contact, assignment } of contacts) {
@@ -85,10 +92,10 @@ export function createAssignmentCoordinator(deps: CoordinatorDeps) {
       mirror.set(contact.id, assignment);
     }
     const completed = new Set<string>();
-    for (const { contactId, outcome } of await deps.listLoggedContacts(sessionId)) {
+    for (const { contactId, outcome } of loggedContacts) {
       if (outcome !== 'skipped') completed.add(contactId);
     }
-    return { session, mutex: new Mutex(), participants: new Set(), directory, mirror, completed };
+    return { session, mutex: new Mutex(), participants: new Set(), memberDirectory, directory, mirror, completed };
   }
 
   async function hydrate(sessionId: string): Promise<SessionState> {
@@ -143,25 +150,26 @@ export function createAssignmentCoordinator(deps: CoordinatorDeps) {
     // The GDPR / anti-enumeration floor: short queries return nothing server-side.
     if (needle.length < MIN_SEARCH_LENGTH) return { matches: [], truncated: false };
 
-    const hits = [...state.directory.values()].filter((c) => normalise(c.name).includes(needle));
+    const hits = [...state.memberDirectory.entries()]
+      .filter(([, name]) => normalise(name).includes(needle))
+      .map(([id, name]) => ({ id, name }));
     hits.sort((a, b) => {
       const aLeads = normalise(a.name).startsWith(needle) ? 0 : 1;
       const bLeads = normalise(b.name).startsWith(needle) ? 0 : 1;
       return aLeads !== bLeads ? aLeads - bLeads : a.name.localeCompare(b.name);
     });
     return {
-      matches: hits.slice(0, MAX_SEARCH_RESULTS).map((c) => ({ id: c.id, name: c.name })),
+      matches: hits.slice(0, MAX_SEARCH_RESULTS),
       truncated: hits.length > MAX_SEARCH_RESULTS,
     };
   }
 
   async function joinSession(sessionId: string, memberId: string): Promise<JoinResponse> {
     const state = await hydrate(sessionId);
-    const member = state.directory.get(memberId);
-    // Not in the view = not a recognised member for this session: fails the gate.
-    if (!member) throw new ParticipantNotRegisteredError('member is not in this session');
+    const name = state.memberDirectory.get(memberId);
+    if (!name) throw new ParticipantNotRegisteredError('member not found');
     state.participants.add(memberId);
-    return { participantId: memberId, displayName: member.name };
+    return { participantId: memberId, displayName: name };
   }
 
   async function getState(

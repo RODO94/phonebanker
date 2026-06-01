@@ -110,18 +110,18 @@ Legitimate outcomes are typed; only world-is-broken conditions throw.
 ### Hono route groups
 ```
 POST   /api/sessions                       — create a new session
-GET    /api/sessions/:id                   — fetch session (script, message, view name)
+GET    /api/sessions/:id                   — fetch session (script, message, batch name)
 POST   /api/sessions/:id/members/search    — bounded member search (returns up to 5)
 POST   /api/sessions/:id/join              — register participant (recordId)
 GET    /api/sessions/:id/state             — polling envelope (claim + burn-down)
 POST   /api/sessions/:id/next              — claim next available contact (idempotent)
 POST   /api/sessions/:id/log               — write phone log, clear assignment
 POST   /api/sessions/:id/skip              — skip contact, clear assignment
-GET    /api/views                          — list available Airtable views for session setup
+POST   /api/batches/count                  — count Members tagged with a batch (organiser pre-create check)
 ```
 
 ### Schema sharing
-Zod schemas describing the API contract live with their domain on the client side (`src/session/sessionSchema.ts`, `src/contact/contactSchema.ts`, `src/organiser/viewsSchema.ts`). The server imports them via an extended `tsconfig.server.json` rather than a top-level `shared/` folder — one config edit, no domain dispersion. If the project later splits into separate packages, the move to `shared/` or a packages monorepo is a one-time migration the codebase will earn at that point.
+Zod schemas describing the API contract live with their domain on the client side (`src/session/sessionSchema.ts`, `src/contact/contactSchema.ts`, `src/batch/batchSchema.ts`). The server imports them via an extended `tsconfig.server.json` rather than a top-level `shared/` folder — one config edit, no domain dispersion. If the project later splits into separate packages, the move to `shared/` or a packages monorepo is a one-time migration the codebase will earn at that point.
 
 ### Transport
 `airtableFetch<T>(path: string, schema: ZodSchema<T>, init?: RequestInit): Promise<T>` — generic in the parsed type; the schema is a required argument, parsed at the transport boundary. This keeps transport reusable across domains and makes the expected shape visible at every call site.
@@ -154,14 +154,15 @@ phonebanker/
 │   ├── routes/                 # TanStack Router file-based routes (location fixed by router)
 │   ├── session/                # Session domain: schema, screens, store slice when split
 │   ├── contact/                # Contact + progress domain: schema, ContactCard, outcomes
-│   ├── organiser/              # Organiser session-planning page: view selection, script, message — co-located schema, hooks, store slice, components
+│   ├── organiser/              # Organiser session-planning page: batch entry, script, message — co-located schema, hooks, store slice, components
+│   ├── batch/                  # Batch domain: batch-count request/response schema shared with the server
 │   ├── shared/                 # Cross-cutting React primitives: Button, Input, layout, etc.
 │   ├── styles/                 # Global cross-cutting CSS (preflight, tokens, elements, layout)
 │   ├── store/                  # Zustand app store — single store while it earns no slicing
 │   └── main.tsx
 ├── server/                     # Hono proxy
 │   ├── session/                # Session routes + assignment coordinator + member-search resolver
-│   ├── views/                  # Airtable view routes
+│   ├── batches/                # Batch-count route + batch member lookup
 │   ├── airtable/               # HTTP transport (Zod-parsed at boundary, no domain logic)
 │   └── index.ts
 ├── tests/

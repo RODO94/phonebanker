@@ -37,10 +37,10 @@ export const MEMBER_ASSIGNMENT_FIELDS = {
   claimedAt: 'phoned_at',
 } as const;
 
-// Phone Logs table. Links carry the relational audit trail (and the GDPR
-// null-on-delete cascade); `sessionId` is a plain-text mirror of the session
-// recordId so the burn-down rebuild can filter logs by session with a cheap,
-// exact filterByFormula instead of matching link display values.
+// Phone Logs table. The Session / Contact / Phonebanker links carry the
+// relational audit trail (and the GDPR null-on-delete cascade). The burn-down
+// rebuild filters logs by session against the `Session` link itself —
+// `FIND(ARRAYJOIN({Session}), …)` — so no plain-text sessionId mirror is needed.
 export const PHONE_LOG_FIELDS = {
   session: 'Session',
   contact: 'Contact',
@@ -48,7 +48,6 @@ export const PHONE_LOG_FIELDS = {
   outcome: 'Outcome',
   messageSent: 'Message sent',
   timestamp: 'Timestamp',
-  sessionId: 'sessionId',
 } as const;
 
 // Maps the client Outcome enum to the Phone Logs single-select choice strings.
