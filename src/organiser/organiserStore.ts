@@ -1,19 +1,18 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { View } from '@/view/viewsSchema';
 
-export const ORGANISER_STEPS = ['identify', 'view', 'script', 'message', 'review'] as const;
+export const ORGANISER_STEPS = ['identify', 'batch', 'script', 'message', 'review'] as const;
 export type OrganiserStep = (typeof ORGANISER_STEPS)[number];
 
 type OrganiserState = {
   step: OrganiserStep;
   organiserName: string;
-  selectedView: View | null;
+  phonebankBatch: string;
   callScript: string;
   smsMessage: string;
   setStep: (step: OrganiserStep) => void;
   setOrganiserName: (name: string) => void;
-  selectView: (view: View) => void;
+  setPhonebankBatch: (batch: string) => void;
   setCallScript: (script: string) => void;
   setSmsMessage: (message: string) => void;
   goNext: () => void;
@@ -23,11 +22,11 @@ type OrganiserState = {
 
 const INITIAL: Pick<
   OrganiserState,
-  'step' | 'organiserName' | 'selectedView' | 'callScript' | 'smsMessage'
+  'step' | 'organiserName' | 'phonebankBatch' | 'callScript' | 'smsMessage'
 > = {
   step: 'identify',
   organiserName: '',
-  selectedView: null,
+  phonebankBatch: '',
   callScript: '',
   smsMessage: '',
 };
@@ -48,7 +47,7 @@ export const useOrganiserStore = create<OrganiserState>()(
       ...INITIAL,
       setStep: (step) => set({ step }),
       setOrganiserName: (organiserName) => set({ organiserName }),
-      selectView: (selectedView) => set({ selectedView }),
+      setPhonebankBatch: (phonebankBatch) => set({ phonebankBatch }),
       setCallScript: (callScript) => set({ callScript }),
       setSmsMessage: (smsMessage) => set({ smsMessage }),
       goNext: () => set((s) => ({ step: nextStep(s.step) })),
@@ -61,7 +60,7 @@ export const useOrganiserStore = create<OrganiserState>()(
       partialize: (s) => ({
         step: s.step,
         organiserName: s.organiserName,
-        selectedView: s.selectedView,
+        phonebankBatch: s.phonebankBatch,
         callScript: s.callScript,
         smsMessage: s.smsMessage,
       }),

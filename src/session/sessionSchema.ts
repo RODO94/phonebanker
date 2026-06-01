@@ -8,8 +8,9 @@ export type SessionStatus = z.infer<typeof SessionStatusSchema>;
 export const SessionSchema = z.object({
   id: z.string(),
   organiserName: z.string(),
-  viewId: z.string(),
-  viewName: z.string(),
+  // The free-text batch tag the organiser sets on Member records in Airtable.
+  // It is the session's contact filter, replacing the (Enterprise-only) view API.
+  phonebankBatch: z.string(),
   callScript: z.string(),
   smsMessage: z.string(),
   status: SessionStatusSchema,
@@ -18,8 +19,7 @@ export type Session = z.infer<typeof SessionSchema>;
 
 export const CreateSessionRequestSchema = z.object({
   organiserName: z.string().min(1),
-  viewId: z.string(),
-  viewName: z.string(),
+  phonebankBatch: z.string().min(1),
   callScript: z.string(),
   smsMessage: z.string(),
 });

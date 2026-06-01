@@ -7,8 +7,7 @@ describe('schemas', () => {
     const result = SessionSchema.safeParse({
       id: 's1',
       organiserName: 'Sam',
-      viewId: 'viwActive',
-      viewName: 'Active members',
+      phonebankBatch: '31-05-2026',
       callScript: 'Hi...',
       smsMessage: 'Sorry we missed you...',
       status: 'active',

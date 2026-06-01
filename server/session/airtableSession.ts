@@ -6,8 +6,7 @@ const CreatedRecordSchema = z.object({ id: z.string() });
 
 export type CreateAirtableSessionFields = {
   organiserName: string;
-  viewId: string;
-  viewName: string;
+  phonebankBatch: string;
   callScript: string;
   smsMessage: string;
 };
@@ -20,8 +19,7 @@ export async function createAirtableSession(
     body: JSON.stringify({
       fields: {
         [SESSION_FIELDS.createdBy]: input.organiserName,
-        [SESSION_FIELDS.viewId]: input.viewId,
-        [SESSION_FIELDS.viewName]: input.viewName,
+        [SESSION_FIELDS.phonebankBatch]: input.phonebankBatch,
         [SESSION_FIELDS.callScript]: input.callScript,
         [SESSION_FIELDS.smsMessage]: input.smsMessage,
         [SESSION_FIELDS.status]: SESSION_ACTIVE_STATUS,

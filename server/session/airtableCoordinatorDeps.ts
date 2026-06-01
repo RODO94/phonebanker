@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import { airtableFetch, AirtableUnavailableError } from '../airtable/client.js';
+import { RecordSchema, fetchAllPages } from '../airtable/records.js';
 import {
   TABLES,
   SESSION_FIELDS,
@@ -8,13 +8,11 @@ import {
   OUTCOME_CHOICES,
   CHOICE_TO_OUTCOME,
 } from '../airtable/schema.js';
+import { memberBatchFilter } from '../batches/batchMembers.js';
 import { SessionNotFoundError } from './errors.js';
 import { toContact } from '../contact/contactMapper.js';
 import { SessionStatusSchema } from '../../src/session/sessionSchema.js';
 import type { CoordinatorDeps, AssignmentMirror, LoggedContact } from './assignmentCoordinator.js';
-
-const RecordSchema = z.object({ id: z.string(), fields: z.record(z.string(), z.unknown()) });
-const ListSchema = z.object({ records: z.array(RecordSchema), offset: z.string().optional() });
 
 function toMirror(fields: Record<string, unknown>): AssignmentMirror {
   const holder = fields[MEMBER_ASSIGNMENT_FIELDS.assignedPhonebanker];
@@ -23,20 +21,6 @@ function toMirror(fields: Record<string, unknown>): AssignmentMirror {
     assignedPhonebanker: typeof holder === 'string' && holder.length > 0 ? holder : null,
     claimedAt: typeof claimedAt === 'string' && claimedAt.length > 0 ? claimedAt : null,
   };
-}
-
-// Reads every page of a list endpoint, following Airtable's `offset` cursor.
-async function fetchAllPages(path: string, query: URLSearchParams) {
-  const records: Array<z.infer<typeof RecordSchema>> = [];
-  let offset: string | undefined;
-  do {
-    if (offset) query.set('offset', offset);
-    else query.delete('offset');
-    const page = await airtableFetch(`${path}?${query.toString()}`, ListSchema);
-    records.push(...page.records);
-    offset = page.offset;
-  } while (offset);
-  return records;
 }
 
 // The real Airtable-backed dependencies for the assignment coordinator. All
@@ -60,8 +44,7 @@ export function createAirtableCoordinatorDeps(): CoordinatorDeps {
       return {
         id: record.id,
         organiserName: String(f[SESSION_FIELDS.createdBy] ?? ''),
-        viewId: String(f[SESSION_FIELDS.viewId] ?? ''),
-        viewName: String(f[SESSION_FIELDS.viewName] ?? ''),
+        phonebankBatch: String(f[SESSION_FIELDS.phonebankBatch] ?? ''),
         callScript: String(f[SESSION_FIELDS.callScript] ?? ''),
         smsMessage: String(f[SESSION_FIELDS.smsMessage] ?? ''),
         // An unknown status reads as 'ended' — fail closed onto the SessionEnded gate.
@@ -69,13 +52,23 @@ export function createAirtableCoordinatorDeps(): CoordinatorDeps {
       };
     },
 
-    async listViewContacts(viewName) {
-      const query = new URLSearchParams({ view: viewName, pageSize: '100' });
-      const records = await fetchAllPages(`/${TABLES.members}`, query);
-      return records.map((rec) => ({
-        contact: toContact(rec.id, rec.fields),
-        assignment: toMirror(rec.fields),
-      }));
+    async listBatchContacts(batch) {
+      try {
+        const query = new URLSearchParams({
+          filterByFormula: memberBatchFilter(batch),
+          pageSize: '100',
+        });
+
+        const records = await fetchAllPages(`/${TABLES.members}`, query);
+
+        return records.map((rec) => ({
+          contact: toContact(rec.id, rec.fields),
+          assignment: toMirror(rec.fields),
+        }));
+      } catch (err) {
+        console.error('error listing batch contacts', err);
+        throw err;
+      }
     },
 
     async readContactAssignment(contactId) {

@@ -36,14 +36,13 @@ function createFakeAirtable(contactCount: number, ioDelayMs = 1) {
       return {
         id,
         organiserName: 'Organiser',
-        viewId: 'viwTest',
-        viewName: 'Test view',
+        phonebankBatch: '31-05-2026',
         callScript: '',
         smsMessage: '',
         status: 'active',
       };
     },
-    async listViewContacts() {
+    async listBatchContacts() {
       await io();
       return contacts.map((contact) => ({ contact, assignment: { ...locks.get(contact.id)! } }));
     },

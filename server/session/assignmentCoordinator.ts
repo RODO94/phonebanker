@@ -25,8 +25,8 @@ export type LoggedContact = { contactId: string; outcome: Outcome };
 export type CoordinatorDeps = {
   now: () => number;
   readSession: (sessionId: string) => Promise<Session>;
-  listViewContacts: (
-    viewName: string,
+  listBatchContacts: (
+    batch: string,
   ) => Promise<Array<{ contact: Contact; assignment: AssignmentMirror }>>;
   readContactAssignment: (contactId: string) => Promise<AssignmentMirror>;
   writeContactAssignment: (
@@ -75,8 +75,9 @@ export function createAssignmentCoordinator(deps: CoordinatorDeps) {
   const hydrating = new Map<string, Promise<SessionState>>();
 
   async function buildState(sessionId: string): Promise<SessionState> {
+
     const session = await deps.readSession(sessionId); // throws SessionNotFoundError
-    const contacts = await deps.listViewContacts(session.viewName);
+    const contacts = await deps.listBatchContacts(session.phonebankBatch);
     const directory = new Map<string, Contact>();
     const mirror = new Map<string, AssignmentMirror>();
     for (const { contact, assignment } of contacts) {
@@ -138,6 +139,7 @@ export function createAssignmentCoordinator(deps: CoordinatorDeps) {
   async function searchMembers(sessionId: string, query: string): Promise<MemberSearchResponse> {
     const state = await hydrate(sessionId);
     const needle = normalise(query);
+
     // The GDPR / anti-enumeration floor: short queries return nothing server-side.
     if (needle.length < MIN_SEARCH_LENGTH) return { matches: [], truncated: false };
 

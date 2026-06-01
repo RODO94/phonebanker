@@ -13,8 +13,7 @@ export const TABLES = {
 // Sessions table fields are camelCase in this base.
 export const SESSION_FIELDS = {
   createdBy: 'createdBy',
-  viewId: 'viewId',
-  viewName: 'viewName',
+  phonebankBatch: 'phonebankBatch',
   callScript: 'callScript',
   smsMessage: 'smsMessage',
   status: 'status',
@@ -22,6 +21,12 @@ export const SESSION_FIELDS = {
 
 // The single-select value that means a session is live and joinable.
 export const SESSION_ACTIVE_STATUS = 'active';
+
+// The Member field the organiser tags by hand to mark a record for tonight's
+// call list. A single-line text field holding the batch string (e.g. a date);
+// the session's `phonebankBatch` is matched against it to build the directory.
+// Views can't be queried outside Airtable Enterprise, so this tag is the filter.
+export const MEMBER_BATCH_FIELD = 'Current Phonebank Batch';
 
 // The assignment lock lives on the Member record as two plain fields.
 // `assignedPhonebanker` is a single-line-text field holding the volunteer's

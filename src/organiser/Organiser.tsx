@@ -1,6 +1,6 @@
 import { ORGANISER_STEPS, useOrganiserStore } from './organiserStore';
 import { Identify } from './steps/Identify/Identify';
-import { ViewSelection } from './steps/ViewSelection/ViewSelection';
+import { BatchEntry } from './steps/BatchEntry/BatchEntry';
 import { ScriptWriter } from './steps/ScriptWriter/ScriptWriter';
 import { MessageWriter } from './steps/MessageWriter/MessageWriter';
 import { SendLink } from './steps/SendLink/SendLink';
@@ -19,7 +19,7 @@ export const Organiser = () => {
       </span>
 
       {step === 'identify' && <Identify />}
-      {step === 'view' && <ViewSelection />}
+      {step === 'batch' && <BatchEntry />}
       {step === 'script' && <ScriptWriter />}
       {step === 'message' && <MessageWriter />}
       {step === 'review' && <SendLink />}

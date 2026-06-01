@@ -22,7 +22,7 @@ function buildJoinUrl(sessionId: string): string {
 
 export const SendLink = () => {
   const organiserName = useOrganiserStore((s) => s.organiserName);
-  const selectedView = useOrganiserStore((s) => s.selectedView);
+  const phonebankBatch = useOrganiserStore((s) => s.phonebankBatch);
   const callScript = useOrganiserStore((s) => s.callScript);
   const smsMessage = useOrganiserStore((s) => s.smsMessage);
   const goBack = useOrganiserStore((s) => s.goBack);
@@ -38,15 +38,14 @@ export const SendLink = () => {
   );
 
   async function submit() {
-    if (!selectedView) return;
+    if (!phonebankBatch) return;
     setState({ kind: 'submitting' });
     try {
       const session = await apiFetch('/sessions', SessionSchema, {
         method: 'POST',
         body: JSON.stringify({
           organiserName,
-          viewId: selectedView.id,
-          viewName: selectedView.name,
+          phonebankBatch,
           callScript,
           smsMessage,
         }),
@@ -83,7 +82,7 @@ export const SendLink = () => {
 
       <div className="review-card">
         <div className="review-section">
-          <h2 className="review-title">{selectedView?.name ?? 'No list selected'}</h2>
+          <h2 className="review-title">{phonebankBatch || 'No batch selected'}</h2>
         </div>
         <div className="review-section">
           <span className="review-label">Script</span>
@@ -117,7 +116,7 @@ export const SendLink = () => {
           <Button
             variant="primary"
             fullWidth
-            disabled={!selectedView || isSubmitting}
+            disabled={!phonebankBatch || isSubmitting}
             onClick={submit}
           >
             {isSubmitting ? 'Creating…' : 'Submit session'}
