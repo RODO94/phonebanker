@@ -97,43 +97,58 @@ export function createAirtableCoordinatorDeps(): CoordinatorDeps {
     },
 
     async writeContactAssignment(contactId, { assignedPhonebanker, claimedAt }) {
-      await airtableFetch(`/${TABLES.members}/${contactId}`, RecordSchema, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          fields: {
-            [MEMBER_ASSIGNMENT_FIELDS.assignedPhonebanker]: assignedPhonebanker,
-            [MEMBER_ASSIGNMENT_FIELDS.claimedAt]: claimedAt,
-          },
-        }),
-      });
+      try {
+        await airtableFetch(`/${TABLES.members}/${contactId}`, RecordSchema, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            fields: {
+              [MEMBER_ASSIGNMENT_FIELDS.assignedPhonebanker]: assignedPhonebanker,
+              [MEMBER_ASSIGNMENT_FIELDS.claimedAt]: claimedAt,
+            },
+          }),
+        });
+      } catch (err) {
+        console.error('error writing contact assignment', contactId, assignedPhonebanker, claimedAt, err);
+        throw err;
+      }
     },
 
     async clearContactAssignment(contactId) {
-      await airtableFetch(`/${TABLES.members}/${contactId}`, RecordSchema, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          fields: {
-            [MEMBER_ASSIGNMENT_FIELDS.assignedPhonebanker]: null,
-            [MEMBER_ASSIGNMENT_FIELDS.claimedAt]: null,
-          },
-        }),
-      });
+      try {
+        await airtableFetch(`/${TABLES.members}/${contactId}`, RecordSchema, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            fields: {
+              [MEMBER_ASSIGNMENT_FIELDS.assignedPhonebanker]: null,
+              [MEMBER_ASSIGNMENT_FIELDS.claimedAt]: null,
+            },
+          }),
+        });
+      } catch (err) {
+        console.error('error clearing contact assignment', contactId, err);
+        throw err;
+      }
     },
 
     async writePhoneLog({ sessionId, contactId, phonebankerId, outcome, messageSent }) {
-      await airtableFetch(`/${TABLES.phoneLogs}`, RecordSchema, {
-        method: 'POST',
-        body: JSON.stringify({
-          fields: {
-            [PHONE_LOG_FIELDS.session]: [sessionId],
-            [PHONE_LOG_FIELDS.contact]: [contactId],
-            [PHONE_LOG_FIELDS.phonebanker]: [phonebankerId],
-            [PHONE_LOG_FIELDS.outcome]: OUTCOME_CHOICES[outcome],
-            [PHONE_LOG_FIELDS.messageSent]: Boolean(messageSent),
-            [PHONE_LOG_FIELDS.timestamp]: new Date().toISOString(),
-          },
-        }),
-      });
+      try {
+        await airtableFetch(`/${TABLES.phoneLogs}`, RecordSchema, {
+          method: 'POST',
+          body: JSON.stringify({
+            fields: {
+              [PHONE_LOG_FIELDS.session]: [sessionId],
+              [PHONE_LOG_FIELDS.contact]: [contactId],
+              [PHONE_LOG_FIELDS.phonebanker]: [phonebankerId],
+              [PHONE_LOG_FIELDS.outcome]: OUTCOME_CHOICES[outcome],
+              [PHONE_LOG_FIELDS.messageSent]: Boolean(messageSent),
+              [PHONE_LOG_FIELDS.timestamp]: new Date().toISOString(),
+            },
+          }),
+        });
+      } catch (err) {
+        console.error('error writing phone log', sessionId, contactId, phonebankerId, outcome, messageSent, err);
+        throw err;
+      }
     },
 
     async listLoggedContacts(sessionId) {

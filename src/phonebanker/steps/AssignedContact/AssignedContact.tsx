@@ -151,6 +151,9 @@ export function AssignedContact() {
 
   const copySms = useCallback(async () => {
     if (!session) return;
+    // the sms message needs to populate the contact name and phone banker name
+    // this can come from the session object and the phone banker name can come from the phone banker store
+    // the variables are {contactName, phonebankerName}
     try {
       await navigator.clipboard.writeText(session.smsMessage);
       setCopied(true);
