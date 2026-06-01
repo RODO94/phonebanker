@@ -54,7 +54,7 @@ export function createAirtableCoordinatorDeps(): CoordinatorDeps {
     },
 
     async listAllMembers() {
-      const query = new URLSearchParams({ pageSize: '100' });
+      const query = new URLSearchParams({ pageSize: '800' });
       query.append('fields[]', CONTACT_FIELDS.name);
       const records = await fetchAllPages(`/${TABLES.members}`, query);
       return records.map((rec) => ({
@@ -66,7 +66,7 @@ export function createAirtableCoordinatorDeps(): CoordinatorDeps {
     async listBatchContacts(batch) {
       const query = new URLSearchParams({
         filterByFormula: memberBatchFilter(batch),
-        pageSize: '100',
+        pageSize: '800',
       });
       // Minimum exposure: fetch only the card fields plus the assignment lock,
       // so the onboarding flags, membership number and notes on the Member

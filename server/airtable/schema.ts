@@ -28,6 +28,12 @@ export const SESSION_ACTIVE_STATUS = 'active';
 // Views can't be queried outside Airtable Enterprise, so this tag is the filter.
 export const MEMBER_BATCH_FIELD = 'Current Phonebank Batch';
 
+// The single-select field on the Member table that determines record type.
+export const CONTACT_TYPE_FIELD = 'Contact type';
+
+// Only these contact types are valid phonebank targets.
+export const ALLOWED_CONTACT_TYPES = ['Member (paying)', 'Member (non-paying)', 'Contact'] as const;
+
 // The assignment lock lives on the Member record as two plain fields.
 // `assignedPhonebanker` is a single-line-text field holding the volunteer's
 // member recordId (not an Airtable link); empty means the contact is unclaimed.
