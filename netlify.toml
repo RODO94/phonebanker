@@ -1,0 +1,28 @@
+# Netlify config for the CLIENT only. The Hono server runs separately on Render.
+#
+# Netlify reads this file at the repo root on every deploy. It replaces the
+# settings you'd otherwise click through in the dashboard, so the deploy is
+# reproducible and lives in git instead of in someone's browser session.
+
+[build]
+  command = "npm run build"   # tsc -b && vite build
+  publish = "dist"            # Vite's output dir
+
+# Proxy /api/* to the always-on Render server. status = 200 makes this a
+# server-side rewrite (a true proxy), not a 301/302 redirect — the browser
+# only ever talks to the Netlify origin, so the client keeps using relative
+# /api paths and there is no CORS to configure.
+#
+# Replace the host below with your Render service URL once it exists.
+[[redirects]]
+  from = "/api/*"
+  to = "https://phonebanker-server.onrender.com/api/:splat"
+  status = 200
+  force = true
+
+# SPA fallback: TanStack Router owns routing client-side, so every non-asset,
+# non-/api path must serve index.html rather than 404.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
