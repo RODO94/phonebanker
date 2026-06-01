@@ -5,7 +5,7 @@
 # reproducible and lives in git instead of in someone's browser session.
 
 [build]
-  command = "npm run build"   # tsc -b && vite build
+  command = "pnpm build"      # tsc -b && vite build
   publish = "dist"            # Vite's output dir
 
 # Proxy /api/* to the always-on Render server. status = 200 makes this a
