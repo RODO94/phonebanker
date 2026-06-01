@@ -5,6 +5,5 @@ dist
 .DS_Store
 playwright-report
 test-results
-src/routeTree.gen.ts
 *.log
 *.tsbuildinfo
