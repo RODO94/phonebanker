@@ -7,6 +7,7 @@ import { CheckIcon, CrossIcon, NoEntryIcon, PhoneIcon } from './OutcomeIcons';
 import { OkResponseSchema } from '@/contact/outcomeSchema';
 import { ClaimResultSchema } from '@/contact/contactSchema';
 import { SessionStateResponseSchema } from '@/session/sessionStateSchema';
+import { interpolate } from '@/organiser/template';
 import './AssignedContact.css';
 
 type TransitionState =
@@ -18,6 +19,7 @@ export function AssignedContact() {
   const sessionId = usePhonebankerStore((s) => s.sessionId);
   const participantId = usePhonebankerStore((s) => s.participantId);
   const currentContact = usePhonebankerStore((s) => s.currentContact);
+  const displayName = usePhonebankerStore((s) => s.displayName);
   const session = usePhonebankerStore((s) => s.session);
   const setStep = usePhonebankerStore((s) => s.setStep);
   const setCurrentContact = usePhonebankerStore((s) => s.setCurrentContact);
@@ -150,18 +152,21 @@ export function AssignedContact() {
   }, [currentContact, sessionId, headers, fetchNext]);
 
   const copySms = useCallback(async () => {
-    if (!session) return;
-    // the sms message needs to populate the contact name and phone banker name
-    // this can come from the session object and the phone banker name can come from the phone banker store
-    // the variables are {contactName, phonebankerName}
+    if (!session || !currentContact) return;
+    // Substitute {contactName}/{phonebankerName} with the same interpolate the
+    // organiser previews against, so the tokens map identically on both sides.
+    const message = interpolate(session.smsMessage, {
+      contactName: currentContact.name,
+      phonebankerName: displayName ?? undefined,
+    });
     try {
-      await navigator.clipboard.writeText(session.smsMessage);
+      await navigator.clipboard.writeText(message);
       setCopied(true);
       setTimeout(() => setCopied(false), 2_000);
     } catch {
       // Clipboard unavailable — no-op.
     }
-  }, [session]);
+  }, [session, currentContact, displayName]);
 
   // ----  Render branches  -------------------------------------------------
 
@@ -246,13 +251,15 @@ export function AssignedContact() {
         />
       </div>
 
-      <button
-        className="assigned-contact-copy"
-        type="button"
-        onClick={copySms}
-      >
-        {copied ? 'Copied!' : 'Copy SMS / voicemail'}
-      </button>
+      {displayName && (
+        <button
+          className="assigned-contact-copy"
+          type="button"
+          onClick={copySms}
+        >
+          {copied ? 'Copied!' : 'Copy SMS / voicemail'}
+        </button>
+      )}
 
       <div className="assigned-contact-actions">
         <Button

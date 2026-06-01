@@ -114,7 +114,7 @@ export function Done() {
       </motion.div>
 
       <motion.p className="done-handoff" variants={slideUp}>
-        Stay on the Zoom for the debrief.
+        Check back in with the organiser for a debrief or next steps.
       </motion.p>
     </motion.div>
   );
