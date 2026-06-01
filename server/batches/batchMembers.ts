@@ -15,7 +15,7 @@ export function memberBatchFilter(batch: string): string {
 export async function countMembersInBatch(batch: string): Promise<number> {
   const query = new URLSearchParams({
     filterByFormula: memberBatchFilter(batch),
-    pageSize: '800',
+    pageSize: '100',
   });
   query.append('fields[]', MEMBER_BATCH_FIELD);
   const records = await fetchAllPages(`/${TABLES.members}`, query);

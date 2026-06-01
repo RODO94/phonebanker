@@ -208,15 +208,110 @@ describe('assignment coordinator — gates', () => {
     await expect(coord.getState(SESSION, 'stranger')).rejects.toThrow();
   });
 
-  it('enforces the 6-character minimum and top-5 bound on member search', async () => {
+  it('enforces the 4-character minimum and top-5 bound on member search', async () => {
     const { deps } = createFakeAirtable(10);
     const coord = createAssignmentCoordinator(deps);
 
     const tooShort = await coord.searchMembers(SESSION, 'Mem');
     expect(tooShort.matches).toHaveLength(0);
 
-    const broad = await coord.searchMembers(SESSION, 'Member');
+    const broad = await coord.searchMembers(SESSION, 'Memb');
     expect(broad.matches.length).toBeLessThanOrEqual(5);
     expect(broad.truncated).toBe(true);
+  });
+});
+
+describe('assignment coordinator — fuzzy member search', () => {
+  // A minimal fake that only exposes the members the coordinator needs for search.
+  function fakeDepsForSearch(names: string[]): CoordinatorDeps {
+    const members = names.map((name, i) => ({ id: `rec${i}`, name }));
+    return {
+      now: () => Date.now(),
+      readSession: async () => ({
+        id: SESSION,
+        organiserName: 'O',
+        phonebankBatch: 'x',
+        callScript: '',
+        smsMessage: '',
+        status: 'active',
+      }),
+      listAllMembers: async () => members.map((m) => ({ ...m })),
+      listBatchContacts: async () => [],
+      readContactAssignment: async () => ({ assignedPhonebanker: null, claimedAt: null }),
+      writeContactAssignment: async () => {},
+      clearContactAssignment: async () => {},
+      writePhoneLog: async () => {},
+      listLoggedContacts: async () => [],
+    };
+  }
+
+  it('matches members with extra whitespace in the stored name', async () => {
+    const coord = createAssignmentCoordinator(fakeDepsForSearch(['salla  tanskanen ']));
+    const result = await coord.searchMembers(SESSION, 'salla tansk');
+    expect(result.matches).toHaveLength(1);
+    expect(result.matches[0].name).toBe('salla  tanskanen ');
+  });
+
+  it('matches an email-as-name record by the local part', async () => {
+    const coord = createAssignmentCoordinator(fakeDepsForSearch(['sj2812@gmail.com ']));
+    const result = await coord.searchMembers(SESSION, 'sj2812');
+    expect(result.matches).toHaveLength(1);
+    expect(result.matches[0].name).toBe('sj2812@gmail.com ');
+  });
+
+  it('matches underscore-separated tokens with space-separated query', async () => {
+    const coord = createAssignmentCoordinator(fakeDepsForSearch(['sandra_tan476@hotmail.com ']));
+    const result = await coord.searchMembers(SESSION, 'sandra tan');
+    expect(result.matches).toHaveLength(1);
+    expect(result.matches[0].name).toBe('sandra_tan476@hotmail.com ');
+  });
+
+  it('matches query tokens in any order', async () => {
+    const coord = createAssignmentCoordinator(fakeDepsForSearch(['samira larouci']));
+    const result = await coord.searchMembers(SESSION, 'larouci samira');
+    expect(result.matches).toHaveLength(1);
+    expect(result.matches[0].name).toBe('samira larouci');
+  });
+
+  it('rejects when one query token is absent', async () => {
+    const coord = createAssignmentCoordinator(fakeDepsForSearch(['sam winter']));
+    const result = await coord.searchMembers(SESSION, 'sam summer');
+    expect(result.matches).toHaveLength(0);
+  });
+
+  it('returns nothing when query matches only a stripped email domain', async () => {
+    const coord = createAssignmentCoordinator(fakeDepsForSearch(['strifeles@gmail.com ']));
+    // "gmail" is stripped with the email, so only "strifeles" remains searchable.
+    // Searching for "gmailc" (6+ chars) should find nothing.
+    const result = await coord.searchMembers(SESSION, 'gmailc');
+    expect(result.matches).toHaveLength(0);
+  });
+
+  it('scores prefix matches higher than substring matches', async () => {
+    const coord = createAssignmentCoordinator(fakeDepsForSearch([
+      'samantha chchch',
+      'sam charlton',
+    ]));
+    const result = await coord.searchMembers(SESSION, 'sam ch');
+    expect(result.matches).toHaveLength(2);
+    // 'sam charlton': 'sam' prefix-matches first token 'sam' (0), 'ch' prefix-matches 'charlton' (1) → score 1
+    // 'samantha chchch': 'sam' substring-matches 'samantha' (2), 'ch' prefix-matches 'chchch' (1) → score 2
+    expect(result.matches[0].name).toBe('sam charlton');
+    expect(result.matches[1].name).toBe('samantha chchch');
+  });
+
+  it('handles duplicate tokens in the stored name', async () => {
+    const coord = createAssignmentCoordinator(fakeDepsForSearch(['soulinake@gmail.com soulinake@gmail.com']));
+    const result = await coord.searchMembers(SESSION, 'soulinak');
+    expect(result.matches).toHaveLength(1);
+    expect(result.matches[0].name).toBe('soulinake@gmail.com soulinake@gmail.com');
+  });
+
+  it('matches diacritics-insensitive as before', async () => {
+    const coord = createAssignmentCoordinator(fakeDepsForSearch(['seán ó briain']));
+    // 'sean bria' tokenizes to ['sean', 'bria'] — both prefix-match the stored tokens
+    const result = await coord.searchMembers(SESSION, 'sean bria');
+    expect(result.matches).toHaveLength(1);
+    expect(result.matches[0].name).toBe('seán ó briain');
   });
 });

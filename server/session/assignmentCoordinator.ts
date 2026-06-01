@@ -58,7 +58,7 @@ type SessionState = {
   completed: Set<string>; // contactIds with a terminal (non-skip) log
 };
 
-const MIN_SEARCH_LENGTH = 6;
+const MIN_SEARCH_LENGTH = 4;
 const MAX_SEARCH_RESULTS = 5;
 
 // Lowercase, diacritic-stripped, trimmed — the comparison form for member search.
@@ -68,6 +68,31 @@ function normalise(value: string): string {
     .replace(/\p{Diacritic}/gu, '')
     .toLowerCase()
     .trim();
+}
+
+// Splits on whitespace, @, ., and _ — so "sandra_tan@hotmail.com" becomes
+// ["sandra", "tan", "hotmail", "com"] and all are searchable.
+function tokenize(value: string): string[] {
+  return value.split(/[\s@._]+/).filter(Boolean);
+}
+
+// Extracts searchable tokens from a stored name. Email domain parts are stripped
+// but the local part is kept: "sj2812@gmail.com" → ["sj2812"]. Underscores and
+// dots within the local part become token boundaries.
+function searchableTokens(name: string): string[] {
+  const norm = normalise(name);
+  const raw = norm.split(/\s+/).filter(Boolean);
+  const tokens: string[] = [];
+  for (const part of raw) {
+    const atPos = part.indexOf('@');
+    if (atPos > 0) {
+      // Email-like: keep the local part, split on . and _
+      tokens.push(...part.slice(0, atPos).split(/[._]+/).filter(Boolean));
+    } else {
+      tokens.push(...part.split(/[._]+/).filter(Boolean));
+    }
+  }
+  return tokens;
 }
 
 export function createAssignmentCoordinator(deps: CoordinatorDeps) {
@@ -150,16 +175,46 @@ export function createAssignmentCoordinator(deps: CoordinatorDeps) {
     // The GDPR / anti-enumeration floor: short queries return nothing server-side.
     if (needle.length < MIN_SEARCH_LENGTH) return { matches: [], truncated: false };
 
-    const hits = [...state.memberDirectory.entries()]
-      .filter(([, name]) => normalise(name).includes(needle))
-      .map(([id, name]) => ({ id, name }));
+    const queryTokens = tokenize(needle);
+    if (queryTokens.length === 0) return { matches: [], truncated: false };
+
+    type Hit = { id: string; name: string; score: number };
+    const hits: Hit[] = [];
+
+    for (const [id, name] of state.memberDirectory) {
+      const nameTokens = searchableTokens(name);
+      if (nameTokens.length === 0) continue;
+
+      // Every query token must appear (as prefix or substring) in the name's tokens.
+      let score = 0; // lower = better: 0=first-token prefix, 1=any-token prefix, 2=substring
+      let matched = true;
+      for (let i = 0; i < queryTokens.length; i++) {
+        const qt = queryTokens[i];
+        let best = 3; // no match
+        for (const nt of nameTokens) {
+          if (nt.startsWith(qt)) {
+            best = Math.min(best, i === 0 ? 0 : 1);
+          } else if (nt.includes(qt)) {
+            best = Math.min(best, 2);
+          }
+        }
+        if (best === 3) {
+          matched = false;
+          break;
+        }
+        score = Math.max(score, best); // worst token determines overall score
+      }
+
+      if (matched) hits.push({ id, name, score });
+    }
+
     hits.sort((a, b) => {
-      const aLeads = normalise(a.name).startsWith(needle) ? 0 : 1;
-      const bLeads = normalise(b.name).startsWith(needle) ? 0 : 1;
-      return aLeads !== bLeads ? aLeads - bLeads : a.name.localeCompare(b.name);
+      if (a.score !== b.score) return a.score - b.score;
+      return a.name.localeCompare(b.name);
     });
+
     return {
-      matches: hits.slice(0, MAX_SEARCH_RESULTS),
+      matches: hits.slice(0, MAX_SEARCH_RESULTS).map(({ id, name }) => ({ id, name })),
       truncated: hits.length > MAX_SEARCH_RESULTS,
     };
   }

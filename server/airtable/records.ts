@@ -14,14 +14,21 @@ export async function fetchAllPages(
   path: string,
   query: URLSearchParams,
 ): Promise<AirtableRecord[]> {
-  const records: AirtableRecord[] = [];
-  let offset: string | undefined;
-  do {
-    if (offset) query.set('offset', offset);
-    else query.delete('offset');
-    const page = await airtableFetch(`${path}?${query.toString()}`, ListSchema);
-    records.push(...page.records);
-    offset = page.offset;
-  } while (offset);
-  return records;
+  try {
+
+    const records: AirtableRecord[] = [];
+    let offset: string | undefined;
+    do {
+      if (offset) query.set('offset', offset);
+      else query.delete('offset');
+      const page = await airtableFetch(`${path}?${query.toString()}`, ListSchema);
+      records.push(...page.records);
+      offset = page.offset;
+    } while (offset);
+
+    return records;
+  } catch (err) {
+    console.error('error fetching all pages', path, query, err);
+    throw err;
+  }
 }
