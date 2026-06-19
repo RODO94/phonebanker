@@ -162,19 +162,23 @@
   flex-direction: column;
 }
 
+/* "Call {name}" is the small kicker; the number below is the focal point of the
+   dial action. With the name heading, the number is one of the two loudest
+   elements on the card — hence the deliberate 24px, larger than any token
+   (the type scale tops out at 32px display / 18px interactive). */
 .assigned-contact-call-name {
-  font-family: var(--font-interactive);
-  font-size: var(--size-interactive);
-  line-height: var(--lh-interactive);
-  font-weight: var(--weight-interactive);
-  letter-spacing: var(--track-interactive);
-}
-
-.assigned-contact-call-number {
   font-family: var(--font-caption);
   font-size: var(--size-caption);
   line-height: var(--lh-caption);
+  font-weight: var(--weight-caption);
   opacity: 0.9;
+}
+
+.assigned-contact-call-number {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  line-height: 1.25;
+  font-weight: 500;
 }
 
 /* ----  Labelled sections  --------------------------------------------- */
@@ -228,7 +232,7 @@
   min-height: 44px;
   padding: 10px 16px;
   font-family: var(--font-interactive);
-  font-size: var(--size-interactive);
+  font-size: 15px;
   line-height: var(--lh-interactive);
   font-weight: var(--weight-interactive);
   letter-spacing: var(--track-interactive);
@@ -312,4 +316,11 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+/* Step the outcome button text down so the name + number stay the loudest text
+   on the screen. Scoped here — the shared Button keeps its default size
+   everywhere else. */
+.assigned-contact-actions .button {
+  font-size: 15px;
 }
