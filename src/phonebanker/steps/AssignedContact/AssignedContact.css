@@ -52,12 +52,19 @@
   }
 }
 
-/* ----  Header — name + phone  ----------------------------------------- */
+/* ----  Identity card — name + standing + dial  ------------------------ */
 
-.assigned-contact-header {
+/* The redesign groups who-you're-calling and the dial action into one raised
+   card, so it reads as the single first thing to act on. Expressed in the
+   existing flat tokens (no soft shadow / large radius). */
+.assigned-contact-card {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 16px;
+  padding: 20px;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-divider);
+  border-radius: 6px;
 }
 
 .assigned-contact-name {
@@ -71,21 +78,43 @@
   word-break: break-word;
 }
 
-/* The dial action — the second-largest element on the card. A prominent green
-   filled button with a leading handset icon, so tapping to call is the obvious
-   move (wireframes-contact-card.md § phone is the second largest element). */
-.assigned-contact-phone {
-  display: inline-flex;
+/* Standing row — a status dot plus the contact-type label. The dot only goes
+   green for a paying member; every other type keeps a neutral dot so colour
+   never over-claims good standing. */
+.assigned-contact-status {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
+  gap: 8px;
+  margin-top: -8px;
+}
+
+.assigned-contact-status-dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--color-border-default);
+
+  &.is-active {
+    background: var(--color-action-success);
+  }
+}
+
+.assigned-contact-status-label {
+  font-family: var(--font-caption);
+  font-size: var(--size-caption);
+  line-height: var(--lh-caption);
+  color: var(--color-text-secondary);
+}
+
+/* The dial action — second-largest element, a prominent green filled button
+   carrying the name + number with a leading handset icon. */
+.assigned-contact-call {
+  display: flex;
+  align-items: center;
+  gap: 14px;
   min-height: 56px;
-  padding: 16px 24px;
-  font-family: var(--font-interactive);
-  font-size: var(--size-interactive);
-  line-height: var(--lh-interactive);
-  font-weight: var(--weight-interactive);
-  letter-spacing: var(--track-interactive);
+  padding: 14px 20px;
   color: var(--color-text-on-action);
   text-decoration: none;
   background: var(--color-action-success);
@@ -98,111 +127,69 @@
   }
 }
 
-.assigned-contact-phone-icon {
+.assigned-contact-call-icon {
   display: inline-flex;
   align-items: center;
 }
 
-.assigned-contact-phone-icon svg {
+.assigned-contact-call-icon svg {
   display: block;
-  width: 1.25em;
-  height: 1.25em;
+  width: 1.5em;
+  height: 1.5em;
 }
 
-/* ----  Meta chips  ---------------------------------------------------- */
-
-.assigned-contact-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.assigned-contact-meta-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 12px;
-  font-family: var(--font-caption);
-  font-size: var(--size-caption);
-  line-height: var(--lh-caption);
-  color: var(--color-text-secondary);
-  background: var(--color-surface-raised);
-  border: 1px solid var(--color-border-default);
-  border-radius: 4px;
-}
-
-/* ----  Summary  ------------------------------------------------------- */
-
-.assigned-contact-summary {
+.assigned-contact-call-text {
   display: flex;
   flex-direction: column;
-  gap: 8px;
 }
 
-.assigned-contact-summary-text {
-  font-family: var(--font-body);
-  font-size: var(--size-body);
-  line-height: var(--lh-body);
-  color: var(--color-text-secondary);
-  margin: 0;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
-
-  &.is-expanded {
-    -webkit-line-clamp: unset;
-    display: block;
-  }
-}
-
-.assigned-contact-summary-toggle {
-  font-family: var(--font-body);
-  font-size: var(--size-body);
-  line-height: var(--lh-body);
-  color: var(--color-text-link);
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  align-self: flex-start;
-
-  &:where(:hover, :focus-visible) {
-    outline: 2px solid var(--color-border-strong);
-    outline-offset: 4px;
-  }
-}
-
-/* ----  Call script  --------------------------------------------------- */
-
-.assigned-contact-script {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-height: 240px;
-  overflow-y: auto;
-  padding: 16px;
-  background: var(--color-surface-callout);
-  border: 1px solid var(--color-border-divider);
-  border-radius: 6px;
-}
-
-.assigned-contact-script-label {
+.assigned-contact-call-name {
   font-family: var(--font-interactive);
   font-size: var(--size-interactive);
   line-height: var(--lh-interactive);
   font-weight: var(--weight-interactive);
   letter-spacing: var(--track-interactive);
-  color: var(--color-text-primary);
+}
+
+.assigned-contact-call-number {
+  font-family: var(--font-caption);
+  font-size: var(--size-caption);
+  line-height: var(--lh-caption);
+  opacity: 0.9;
+}
+
+/* ----  Labelled sections  --------------------------------------------- */
+
+.assigned-contact-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.assigned-contact-eyebrow {
+  font-family: var(--font-caption);
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
   margin: 0;
 }
 
-.assigned-contact-script-body {
+/* ----  What to say (script callout)  ---------------------------------- */
+
+.assigned-contact-script {
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 16px;
   font-family: var(--font-body);
   font-size: var(--size-body);
   line-height: var(--lh-body);
   color: var(--color-text-primary);
+  background: var(--color-surface-callout);
+  border: 1px solid var(--color-border-divider);
+  border-radius: 6px;
 
   & p {
     margin: 0 0 12px;
@@ -231,10 +218,72 @@
   border: 2px solid var(--color-border-strong);
   border-radius: 6px;
   cursor: pointer;
+  align-self: flex-start;
 
   &:where(:hover, :focus-visible) {
     outline: 2px solid var(--color-border-strong);
     outline-offset: 2px;
+  }
+}
+
+/* ----  Previous note (collapsible)  ----------------------------------- */
+
+.assigned-contact-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.assigned-contact-notes-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 8px 0;
+  font-family: var(--font-interactive);
+  font-size: var(--size-caption);
+  line-height: var(--lh-caption);
+  font-weight: var(--weight-interactive);
+  letter-spacing: var(--track-interactive);
+  color: var(--color-text-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+
+  &:where(:hover, :focus-visible) {
+    outline: 2px solid var(--color-border-strong);
+    outline-offset: 2px;
+  }
+}
+
+.assigned-contact-notes-chevron {
+  display: inline-flex;
+  align-items: center;
+  transition: transform 0.15s ease;
+
+  & svg {
+    display: block;
+    width: 1.1em;
+    height: 1.1em;
+  }
+
+  &.is-open {
+    transform: rotate(180deg);
+  }
+}
+
+.assigned-contact-notes-body {
+  padding: 15px 16px;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-divider);
+  border-radius: 6px;
+
+  & p {
+    margin: 0;
+    font-family: var(--font-body);
+    font-size: var(--size-body);
+    line-height: var(--lh-body);
+    color: var(--color-text-secondary);
   }
 }
 

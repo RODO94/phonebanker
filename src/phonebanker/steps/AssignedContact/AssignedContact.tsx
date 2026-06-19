@@ -3,7 +3,7 @@ import { marked } from 'marked';
 import { usePhonebankerStore } from '../../phonebankerStore';
 import { apiFetch } from '@/shared/api/apiFetch';
 import { Button } from '@/shared/Button/Button';
-import { CheckIcon, CrossIcon, NoEntryIcon, PhoneIcon } from './OutcomeIcons';
+import { CheckIcon, ChevronIcon, CrossIcon, NoEntryIcon, PhoneIcon } from './OutcomeIcons';
 import { OkResponseSchema } from '@/contact/outcomeSchema';
 import { ClaimResultSchema } from '@/contact/contactSchema';
 import { SessionStateResponseSchema } from '@/session/sessionStateSchema';
@@ -26,7 +26,7 @@ export function AssignedContact() {
   const setProgress = usePhonebankerStore((s) => s.setProgress);
   const setLastOutcome = usePhonebankerStore((s) => s.setLastOutcome);
 
-  const [summaryExpanded, setSummaryExpanded] = useState(false);
+  const [notesExpanded, setNotesExpanded] = useState(false);
   const [transition, setTransition] = useState<TransitionState>({ kind: 'idle' });
   const [copied, setCopied] = useState(false);
 
@@ -179,6 +179,8 @@ export function AssignedContact() {
   }
 
   const scriptHtml = marked.parse(session.callScript) as string;
+  const firstName = currentContact.name.split(' ')[0] || currentContact.name;
+  const isPayingMember = currentContact.contactType === 'Member (paying)';
 
   return (
     <div className="assigned-contact">
@@ -202,102 +204,120 @@ export function AssignedContact() {
         </div>
       )}
 
-      <header className="assigned-contact-header">
+      {/* Identity card — name, standing, and the dial action grouped as the
+          one thing the phonebanker acts on first. */}
+      <div className="assigned-contact-card">
         <h2 className="assigned-contact-name">{currentContact.name}</h2>
+
+        {currentContact.contactType && (
+          <div className="assigned-contact-status">
+            <span
+              className={`assigned-contact-status-dot${isPayingMember ? ' is-active' : ''}`}
+              aria-hidden="true"
+            />
+            <span className="assigned-contact-status-label">
+              {currentContact.contactType}
+            </span>
+          </div>
+        )}
+
         <a
-          className="assigned-contact-phone"
+          className="assigned-contact-call"
           href={`tel:${currentContact.phoneNumber}`}
         >
-          <span className="assigned-contact-phone-icon" aria-hidden="true">
+          <span className="assigned-contact-call-icon" aria-hidden="true">
             <PhoneIcon />
           </span>
-          {currentContact.phoneNumber}
-        </a>
-      </header>
-
-      <div className="assigned-contact-meta">
-        {currentContact.contactType && (
-          <span className="assigned-contact-meta-chip">
-            {currentContact.contactType}
+          <span className="assigned-contact-call-text">
+            <span className="assigned-contact-call-name">Call {firstName}</span>
+            <span className="assigned-contact-call-number">
+              {currentContact.phoneNumber}
+            </span>
           </span>
-        )}
-  
+        </a>
       </div>
 
-      {currentContact.summary && (
-        <div className="assigned-contact-summary">
-          <p
-            className={`assigned-contact-summary-text${summaryExpanded ? ' is-expanded' : ''}`}
+      <section className="assigned-contact-section">
+        <h3 className="assigned-contact-eyebrow">What to say</h3>
+        <div
+          className="assigned-contact-script"
+          dangerouslySetInnerHTML={{ __html: scriptHtml }}
+        />
+        {displayName && (
+          <button
+            className="assigned-contact-copy"
+            type="button"
+            onClick={copySms}
           >
-            {currentContact.summary}
-          </p>
-          {currentContact.summary.length > 120 && (
-            <button
-              className="assigned-contact-summary-toggle"
-              type="button"
-              onClick={() => setSummaryExpanded((v) => !v)}
+            {copied ? 'Copied!' : 'Copy SMS / voicemail'}
+          </button>
+        )}
+      </section>
+
+      {currentContact.summary && (
+        <div className="assigned-contact-notes">
+          <button
+            className="assigned-contact-notes-toggle"
+            type="button"
+            aria-expanded={notesExpanded}
+            onClick={() => setNotesExpanded((v) => !v)}
+          >
+            <span>Previous note</span>
+            <span
+              className={`assigned-contact-notes-chevron${notesExpanded ? ' is-open' : ''}`}
+              aria-hidden="true"
             >
-              {summaryExpanded ? 'Show less' : 'Show more'}
-            </button>
+              <ChevronIcon />
+            </span>
+          </button>
+          {notesExpanded && (
+            <div className="assigned-contact-notes-body">
+              <p>{currentContact.summary}</p>
+            </div>
           )}
         </div>
       )}
 
-      <div className="assigned-contact-script">
-        <h3 className="assigned-contact-script-label">Call script</h3>
-        <div
-          className="assigned-contact-script-body"
-          dangerouslySetInnerHTML={{ __html: scriptHtml }}
-        />
-      </div>
-
-      {displayName && (
-        <button
-          className="assigned-contact-copy"
-          type="button"
-          onClick={copySms}
-        >
-          {copied ? 'Copied!' : 'Copy SMS / voicemail'}
-        </button>
-      )}
-
-      <div className="assigned-contact-actions">
-        <Button
-          variant="positive"
-          icon={<CheckIcon />}
-          fullWidth
-          onClick={handleHadConversation}
-          disabled={transition.kind !== 'idle'}
-        >
-          Had a conversation
-        </Button>
-        <Button
-          variant="neutral"
-          icon={<CrossIcon />}
-          fullWidth
-          onClick={handleNoAnswer}
-          disabled={transition.kind !== 'idle'}
-        >
-          No answer
-        </Button>
-        <Button
-          variant="caution"
-          icon={<NoEntryIcon />}
-          fullWidth
-          onClick={handleWantsRemoved}
-          disabled={transition.kind !== 'idle'}
-        >
-          Wants to be removed
-        </Button>
-        <Button
-          variant="link"
-          fullWidth
-          onClick={handleSkip}
-          disabled={transition.kind !== 'idle'}
-        >
-          Skip this contact
-        </Button>
-      </div>
+      <section className="assigned-contact-section">
+        <h3 className="assigned-contact-eyebrow">After the call</h3>
+        <div className="assigned-contact-actions">
+          <Button
+            variant="positive"
+            icon={<CheckIcon />}
+            fullWidth
+            onClick={handleHadConversation}
+            disabled={transition.kind !== 'idle'}
+          >
+            Had a conversation
+          </Button>
+          <Button
+            variant="neutral"
+            icon={<CrossIcon />}
+            fullWidth
+            onClick={handleNoAnswer}
+            disabled={transition.kind !== 'idle'}
+          >
+            No answer
+          </Button>
+          <Button
+            variant="caution"
+            icon={<NoEntryIcon />}
+            fullWidth
+            onClick={handleWantsRemoved}
+            disabled={transition.kind !== 'idle'}
+          >
+            Wants to be removed
+          </Button>
+          <Button
+            variant="link"
+            fullWidth
+            onClick={handleSkip}
+            disabled={transition.kind !== 'idle'}
+          >
+            Skip this contact
+          </Button>
+        </div>
+      </section>
     </div>
   );
 }

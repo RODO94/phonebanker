@@ -76,8 +76,8 @@ export function WantsRemoved() {
       </p>
 
       <p className="wants-removed-explanation">
-        An organiser will update her contact preferences
-        tomorrow. She won&rsquo;t be called again until then.
+        An organiser will update their contact preferences
+        tomorrow. They won't be called again until then.
       </p>
 
       {error && (

@@ -40,6 +40,16 @@ export function NoEntryIcon() {
   );
 }
 
+// Disclosure chevron — leads the collapsible "Previous note" toggle. Rotated
+// via CSS when the note is open.
+export function ChevronIcon() {
+  return (
+    <svg {...iconProps}>
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
 // Dial — a handset, filled so it reads at a glance on the green call button.
 export function PhoneIcon() {
   return (
