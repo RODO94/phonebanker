@@ -18,6 +18,15 @@
   }
 }
 
+/* The assigned screen goes two-column at 568px; raise its cap so the wider
+   layout (and the header above it) has room to breathe. Other steps keep the
+   32rem cap above. */
+@media (min-width: 568px) {
+  .phonebanker.is-wide {
+    max-width: 750px;
+  }
+}
+
 .phonebanker-screen {
   padding: 24px 16px;
 }

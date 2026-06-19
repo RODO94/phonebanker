@@ -204,6 +204,9 @@ export function AssignedContact() {
         </div>
       )}
 
+      {/* Left column on wide screens: who you're calling and what to say.
+          The after-the-call actions are the second grid child, below. */}
+      <div className="assigned-contact-main">
       {/* Identity card — name, standing, and the dial action grouped as the
           one thing the phonebanker acts on first. */}
       <div className="assigned-contact-card">
@@ -277,8 +280,9 @@ export function AssignedContact() {
           )}
         </div>
       )}
+      </div>
 
-      <section className="assigned-contact-section">
+      <section className="assigned-contact-section assigned-contact-after">
         <h3 className="assigned-contact-eyebrow">After the call</h3>
         <div className="assigned-contact-actions">
           <Button

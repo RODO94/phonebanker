@@ -4,6 +4,25 @@
   gap: 24px;
 }
 
+.assigned-contact-main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+/* Wide screens: information on the left (~60%), the after-the-call actions
+   docked to the right (~40%), top-aligned with the identity card. Below this
+   the layout is the single mobile stack above. */
+@media (min-width: 568px) {
+  .assigned-contact {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    align-items: start;
+    gap: 24px;
+  }
+}
+
 /* ----  Loading / empty state  ----------------------------------------- */
 
 .assigned-contact-loading {

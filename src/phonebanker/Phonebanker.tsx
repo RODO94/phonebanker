@@ -34,8 +34,12 @@ export function Phonebanker({ sessionId }: PhonebankerProps) {
     usePhonebankerStore.setState({ sessionId });
   }, [sessionId]);
 
+  // The assigned screen widens to a two-column layout on larger viewports, so it
+  // breaks out of the default narrow cap; every other step stays single-column.
+  const shellClass = step === 'assigned' ? 'phonebanker is-wide' : 'phonebanker';
+
   return (
-    <div className="phonebanker">
+    <div className={shellClass}>
       {CALL_LOOP_STEPS.has(step) && <PhonebankHeader total={total} called={called} />}
       <div className="phonebanker-screen">
         {step === 'join' && <Join />}
