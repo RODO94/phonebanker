@@ -58,3 +58,14 @@ export function PhoneIcon() {
     </svg>
   );
 }
+
+// Sync — a two-arrow refresh loop, leads the manual "catch up" action.
+export function RefreshIcon() {
+  return (
+    <svg {...iconProps}>
+      <path d="M4 4v5h5" />
+      <path d="M20 20v-5h-5" />
+      <path d="M4.6 15A8 8 0 0 0 19 15.4M19.4 9A8 8 0 0 0 5 8.6" />
+    </svg>
+  );
+}

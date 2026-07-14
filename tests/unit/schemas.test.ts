@@ -15,8 +15,13 @@ describe('schemas', () => {
     expect(result.success).toBe(true);
   });
 
-  it('rejects a contact missing phone', () => {
+  it('accepts a contact missing phone', () => {
     const result = ContactSchema.safeParse({ id: 'c1', name: 'Ada', assignedPhonebanker: null });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects a contact missing name', () => {
+    const result = ContactSchema.safeParse({ id: 'c1', phoneNumber: '07700 900000' });
     expect(result.success).toBe(false);
   });
 });

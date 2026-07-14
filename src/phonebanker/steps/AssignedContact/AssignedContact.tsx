@@ -3,7 +3,7 @@ import { marked } from 'marked';
 import { usePhonebankerStore } from '../../phonebankerStore';
 import { apiFetch } from '@/shared/api/apiFetch';
 import { Button } from '@/shared/Button/Button';
-import { CheckIcon, ChevronIcon, CrossIcon, NoEntryIcon, PhoneIcon } from './OutcomeIcons';
+import { CheckIcon, ChevronIcon, CrossIcon, NoEntryIcon, PhoneIcon, RefreshIcon } from './OutcomeIcons';
 import { OkResponseSchema } from '@/contact/outcomeSchema';
 import { ClaimResultSchema } from '@/contact/contactSchema';
 import { SessionStateResponseSchema } from '@/session/sessionStateSchema';
@@ -29,6 +29,7 @@ export function AssignedContact() {
   const [notesExpanded, setNotesExpanded] = useState(false);
   const [transition, setTransition] = useState<TransitionState>({ kind: 'idle' });
   const [copied, setCopied] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   const pollRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const currentContactRef = useRef(currentContact);
@@ -68,37 +69,66 @@ export function AssignedContact() {
     [sessionId, headers, setCurrentContact, setStep],
   );
 
+  // Reconciles local state against the server's view — progress, and whichever
+  // contact this participant currently holds. Two tabs/devices joined under the
+  // same participant can drift: one logs an outcome and claims a new contact,
+  // but the other's local `currentContact` has no way to hear about it except
+  // by asking. Covers all three claim kinds so both the timeout-reclaim path
+  // and the "other side moved on" path self-heal the same way. Shared by the
+  // background poll and the manual Refresh button.
+  const syncState = useCallback(async () => {
+    const state = await apiFetch(
+      `/sessions/${sessionId}/state`,
+      SessionStateResponseSchema,
+      { headers: headers() },
+    );
+
+    if (state.claim.kind === 'exhausted') {
+      setStep('done');
+      return;
+    }
+
+    setProgress(state.progress.total, state.progress.called);
+
+    if (state.claim.kind === 'idle') {
+      // Claim timed out while we were displaying a contact — transparently
+      // reclaim the next one.
+      if (currentContactRef.current) {
+        setCurrentContact(null);
+        await fetchNext(currentContactRef.current.name);
+      }
+      return;
+    }
+
+    // state.claim.kind === 'assigned' — sync to whatever contact the server
+    // says we're holding, in case it changed on another tab/device.
+    if (state.claim.assignment.contact.id !== currentContactRef.current?.id) {
+      setCurrentContact(state.claim.assignment.contact);
+    }
+  }, [sessionId, headers, setStep, setProgress, setCurrentContact, fetchNext]);
+
   // Poll session state every 10 s.
   useEffect(() => {
-    const poll = async () => {
-      try {
-        const state = await apiFetch(
-          `/sessions/${sessionId}/state`,
-          SessionStateResponseSchema,
-          { headers: headers() },
-        );
-
-        if (state.claim.kind === 'exhausted') {
-          setStep('done');
-          return;
-        }
-
-        setProgress(state.progress.total, state.progress.called);
-
-        // Claim timed out while we were displaying a contact.
-        // Transparently reclaim the next contact.
-        if (state.claim.kind === 'idle' && currentContactRef.current) {
-          setCurrentContact(null);
-          fetchNext(currentContactRef.current.name);
-        }
-      } catch {
+    const poll = () => {
+      syncState().catch(() => {
         // Silently ignore — next poll retries.
-      }
+      });
     };
 
     pollRef.current = setInterval(poll, 10_000);
     return () => clearInterval(pollRef.current);
-  }, [sessionId, headers, setStep, setProgress, setCurrentContact, fetchNext]);
+  }, [syncState]);
+
+  const handleRefresh = useCallback(async () => {
+    setSyncing(true);
+    try {
+      await syncState();
+    } catch {
+      // Silently ignore — same posture as the background poll.
+    } finally {
+      setSyncing(false);
+    }
+  }, [syncState]);
 
   // ----  Outcome handlers  ------------------------------------------------
 
@@ -207,6 +237,25 @@ export function AssignedContact() {
       {/* Left column on wide screens: who you're calling and what to say.
           The after-the-call actions are the second grid child, below. */}
       <div className="assigned-contact-main">
+      {/* Catches this tab up with the server without a page reload — a reload
+          would lose participantId (no persistence, by design) and boot the
+          phonebanker back to the join screen. Mainly useful when the same
+          participant is open on another device and has moved on. */}
+      <button
+        className="assigned-contact-refresh"
+        type="button"
+        onClick={handleRefresh}
+        disabled={syncing}
+      >
+        <span
+          className={`assigned-contact-refresh-icon${syncing ? ' is-syncing' : ''}`}
+          aria-hidden="true"
+        >
+          <RefreshIcon />
+        </span>
+        {syncing ? 'Refreshing…' : 'Refresh'}
+      </button>
+
       {/* Identity card — name, standing, and the dial action grouped as the
           one thing the phonebanker acts on first. */}
       <div className="assigned-contact-card">
