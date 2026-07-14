@@ -7,7 +7,7 @@ import { z } from 'zod';
 export const ContactSchema = z.object({
   id: z.string(),
   name: z.string(),
-  phoneNumber: z.string(),
+  phoneNumber: z.string().optional(),
 
   contactType: z
     .enum([

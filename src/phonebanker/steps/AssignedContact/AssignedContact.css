@@ -181,6 +181,16 @@
   font-weight: 500;
 }
 
+.assigned-contact-no-number {
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  padding: 14px 20px;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-raised);
+  border-radius: 6px;
+}
+
 /* ----  Labelled sections  --------------------------------------------- */
 
 .assigned-contact-section {

@@ -224,20 +224,24 @@ export function AssignedContact() {
           </div>
         )}
 
-        <a
-          className="assigned-contact-call"
-          href={`tel:${currentContact.phoneNumber}`}
-        >
-          <span className="assigned-contact-call-icon" aria-hidden="true">
-            <PhoneIcon />
-          </span>
-          <span className="assigned-contact-call-text">
-            <span className="assigned-contact-call-name">Call {firstName}</span>
-            <span className="assigned-contact-call-number">
-              {currentContact.phoneNumber}
+        {currentContact.phoneNumber ? (
+          <a
+            className="assigned-contact-call"
+            href={`tel:${currentContact.phoneNumber}`}
+          >
+            <span className="assigned-contact-call-icon" aria-hidden="true">
+              <PhoneIcon />
             </span>
-          </span>
-        </a>
+            <span className="assigned-contact-call-text">
+              <span className="assigned-contact-call-name">Call {firstName}</span>
+              <span className="assigned-contact-call-number">
+                {currentContact.phoneNumber}
+              </span>
+            </span>
+          </a>
+        ) : (
+          <p className="assigned-contact-no-number">No phone number on file</p>
+        )}
       </div>
 
       <section className="assigned-contact-section">
