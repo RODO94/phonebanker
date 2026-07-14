@@ -152,13 +152,21 @@ export function createAirtableCoordinatorDeps(): CoordinatorDeps {
     },
 
     async listLoggedContacts(sessionId) {
-      const query = new URLSearchParams({
-        filterByFormula: `FIND('${sessionId}', ARRAYJOIN({${PHONE_LOG_FIELDS.session}}))`,
-        pageSize: '100',
-      });
+      // No filterByFormula here deliberately: {Session} is a linked-record field,
+      // and inside a formula a link field evaluates to the linked record's primary
+      // field text, not its id — `FIND(sessionId, ARRAYJOIN({Session}))` can never
+      // match an Airtable record id, so it silently returned zero rows every time.
+      // The plain record-fetch API doesn't have that quirk (link fields come back
+      // as real id arrays, same as PHONE_LOG_FIELDS.contact below), so the session
+      // match happens here in code instead.
+      const query = new URLSearchParams({ pageSize: '100' });
       const records = await fetchAllPages(`/${TABLES.phoneLogs}`, query);
       const logged: LoggedContact[] = [];
       for (const rec of records) {
+        const sessionLink = rec.fields[PHONE_LOG_FIELDS.session];
+        const sessionIds = Array.isArray(sessionLink) ? sessionLink.map(String) : [];
+        if (!sessionIds.includes(sessionId)) continue;
+
         const contactLink = rec.fields[PHONE_LOG_FIELDS.contact];
         const contactId = Array.isArray(contactLink) ? String(contactLink[0]) : undefined;
         const outcome = CHOICE_TO_OUTCOME[String(rec.fields[PHONE_LOG_FIELDS.outcome] ?? '')];

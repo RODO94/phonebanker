@@ -55,7 +55,7 @@ type SessionState = {
   memberDirectory: Map<string, string>; // memberId → name, all members (for search + join)
   directory: Map<string, Contact>; // contactId → contact, batch only (for claims)
   mirror: Map<string, AssignmentMirror>; // contactId → current lock
-  completed: Set<string>; // contactIds with a terminal (non-skip) log
+  completed: Set<string>; // contactIds with any logged outcome, including skips — see releaseContact
 };
 
 const MIN_SEARCH_LENGTH = 4;
@@ -117,9 +117,7 @@ export function createAssignmentCoordinator(deps: CoordinatorDeps) {
       mirror.set(contact.id, assignment);
     }
     const completed = new Set<string>();
-    for (const { contactId, outcome } of loggedContacts) {
-      if (outcome !== 'skipped') completed.add(contactId);
-    }
+    for (const { contactId } of loggedContacts) completed.add(contactId);
     return { session, mutex: new Mutex(), participants: new Set(), memberDirectory, directory, mirror, completed };
   }
 
@@ -302,8 +300,11 @@ export function createAssignmentCoordinator(deps: CoordinatorDeps) {
     });
   }
 
-  // Skip: log the Skipped outcome for the audit trail, then return the contact to
-  // the pool. Deliberately not marked completed — someone still needs to call them.
+  // Skip: log the Skipped outcome for the audit trail and remove the contact from
+  // this session's candidate pool. Terminal, like any other logged outcome — the
+  // claim scan always restarts from the top of the directory (see
+  // claimNextUnassignedContact), so leaving a skipped contact eligible meant it
+  // immediately won the next claim over anyone not yet attempted.
   async function releaseContact(
     sessionId: string,
     participantId: string,
@@ -315,6 +316,7 @@ export function createAssignmentCoordinator(deps: CoordinatorDeps) {
       await deps.writePhoneLog({ sessionId, contactId, phonebankerId: participantId, outcome: 'skipped' });
       await deps.clearContactAssignment(contactId);
       state.mirror.set(contactId, { assignedPhonebanker: null, claimedAt: null });
+      state.completed.add(contactId);
     });
   }
 

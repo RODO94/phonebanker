@@ -80,7 +80,7 @@ function createFakeAirtable(contactCount: number, ioDelayMs = 1) {
     },
     async listLoggedContacts() {
       await io();
-      return logs.filter((l) => l.outcome !== 'skipped');
+      return logs.map((l) => ({ ...l }));
     },
   };
 
@@ -141,20 +141,54 @@ describe('assignment coordinator — list exhaustion', () => {
   });
 });
 
-describe('assignment coordinator — skip returns the contact to the pool', () => {
-  it('lets another participant claim a released contact and logs the skip', async () => {
+describe('assignment coordinator — skip removes the contact from the pool', () => {
+  it('logs the skip and never offers that contact again this session', async () => {
     const { deps, contactIds, logs } = createFakeAirtable(2);
     const coord = createAssignmentCoordinator(deps);
     const [v1, v2] = contactIds;
     await joinAll(coord, [v1, v2]);
 
     const claimed = await coord.claimNextUnassignedContact(SESSION, v1);
-    const released = claimedId(claimed)!;
-    await coord.releaseContact(SESSION, v1, released);
+    const skipped = claimedId(claimed)!;
+    await coord.releaseContact(SESSION, v1, skipped);
+    expect(logs).toContainEqual({ contactId: skipped, outcome: 'skipped' });
 
-    const reclaimed = await coord.claimNextUnassignedContact(SESSION, v2);
-    expect(claimedId(reclaimed)).toBe(released);
-    expect(logs).toContainEqual({ contactId: released, outcome: 'skipped' });
+    // The other contact is still up for grabs — just not the skipped one.
+    const next = await coord.claimNextUnassignedContact(SESSION, v2);
+    expect(claimedId(next)).toBeDefined();
+    expect(claimedId(next)).not.toBe(skipped);
+
+    // Nothing left: the skipped contact is terminal, not reclaimable.
+    const exhausted = await coord.claimNextUnassignedContact(SESSION, v1);
+    expect(exhausted.kind).toBe('list-exhausted');
+  });
+});
+
+describe('assignment coordinator — survives a restart', () => {
+  it('does not re-offer a contact already logged (completed or skipped) before the restart', async () => {
+    // A redeploy tears down the coordinator's in-memory state and rebuilds it from
+    // deps.listLoggedContacts on the next hydrate — this models that by handing the
+    // same fake Airtable (same `logs`) to a brand-new coordinator instance.
+    const { deps, contactIds } = createFakeAirtable(3);
+    const coord1 = createAssignmentCoordinator(deps);
+    const [v1, v2, v3] = contactIds;
+    await joinAll(coord1, [v1, v2, v3]);
+
+    const first = await coord1.claimNextUnassignedContact(SESSION, v1);
+    await coord1.recordOutcome(SESSION, v1, { contactId: claimedId(first)!, outcome: 'had-conversation' });
+
+    const second = await coord1.claimNextUnassignedContact(SESSION, v2);
+    await coord1.releaseContact(SESSION, v2, claimedId(second)!);
+
+    const coord2 = createAssignmentCoordinator(deps); // "redeploy"
+    await joinAll(coord2, [v1, v2, v3]);
+
+    const third = await coord2.claimNextUnassignedContact(SESSION, v3);
+    expect(claimedId(third)).not.toBe(claimedId(first));
+    expect(claimedId(third)).not.toBe(claimedId(second));
+
+    const exhausted = await coord2.claimNextUnassignedContact(SESSION, v1);
+    expect(exhausted.kind).toBe('list-exhausted');
   });
 });
 
